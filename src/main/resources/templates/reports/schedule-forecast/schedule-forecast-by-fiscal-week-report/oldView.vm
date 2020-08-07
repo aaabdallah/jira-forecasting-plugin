@@ -1,0 +1,174 @@
+$webResourceManager.requireResourcesForContext("sa.com.ruhtlc.cloud.jira.forecasting")
+
+#set( $monthAbbreviations = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] )
+#set( $thisWeekColor = "w3-pale-green" )
+
+<table class="reportHeader w3-light-grey">
+<tbody>
+	<tr>
+		<td>Report Period: $MMMddyyyyFormatter.format($reportStartingFiscalWeek.getStartingDate()) - $MMMddyyyyFormatter.format($reportEndingFiscalWeek.getEndingDate())</td>
+		<td>Forecasts Source: <a href="$forecastsSourceURL" target="_blank">$forecastsSourceName</a></td>
+	</tr>
+	<tr>
+		<td>Forecast Date Used: $forecastDateToUse</td>
+		<td>Included Forecasts: $validForecastsCount</td>
+	</tr>
+</tbody>
+</table>
+
+#if ( ! $validForecastsCount || $validForecastsCount == 0 )
+<div class="aui-message aui-message-info">
+	<p class="title">
+		<strong>No matching forecasts</strong>
+	</p>
+	<p>No forecasts were found that match the report's input parameters.</p>
+
+	#stop
+	
+#end
+ 
+#include( "/templates/reports/schedule-forecast/jsToggleDetails.vm" )
+
+## BEGIN ########################################
+
+#set( $darkRow = 0 )
+
+<table class="scheduleForecastTable">
+## Iterate through all weeks
+<colgroup>
+	<col class="domainColumn"/>
+#foreach ($reportWeekStart in $forecastSummaries.keySet() )
+	<col
+	#if ( $reportCurrentWeek && $reportWeekStart.equals( $reportCurrentWeek ) )
+		class="weekColumn $thisWeekColor"
+	#else
+		class="weekColumn"
+	#end
+	/>
+#end
+</colgroup>
+<tbody>
+	<tr class="lightRow headerRow">
+		<td>&nbsp;</td>
+#foreach ($reportWeekStart in $forecastSummaries.keySet() )
+		<td
+	#if ( $reportCurrentWeek && $reportWeekStart.equals( $reportCurrentWeek ) )
+			class="$thisWeekColor"
+	#end
+		>
+			<div style="font-weight:bold">$MMMddyyyyFormatter.format( $reportWeekStart.getStartingDate() )</div>
+			<div><span title="Week of Fiscal Year" class="weekofyearHighlight">WY$reportWeekStart.getFiscalWeekOfYear():</span> <span title="Fiscal Quarter" class="quarterHighlight">Q$reportWeekStart.getFiscalQuarter()</span> <span title="Month of Quarter" class="monthHighlight">M$reportWeekStart.getFiscalMonthOfQuarter()</span> <span title="Week of Month" class="weekHighlight">W$reportWeekStart.getFiscalWeekOfMonth()</span></div>
+	#if ( $reportCurrentWeek && $reportWeekStart.equals( $reportCurrentWeek ) )
+			<div><span class="quarterHighlight">THIS WEEK</div>
+	#end
+		</td>
+#end
+	</tr>
+
+#foreach ( $forecastDomain in $forecastDomains )
+	<tr class="regularTopBorder">
+		<td class="domainCell">$forecastDomain</td>
+	#foreach ($reportWeekStart in $forecastSummaries.keySet() )
+		<td class="forecastsCell">
+
+		#if ( !$forecastSummaries.get($reportWeekStart).isEmpty() )
+				<table class="contributionTable forecastSummaryClass${reportWeekStart.getYear()}${reportWeekStart.getFiscalWeekOfYear()}">
+				<colgroup>
+					<col/>
+				</colgroup>
+				<tbody>
+
+			#foreach ($forecastSummary in $forecastSummaries.get($reportWeekStart))
+				#if ( $forecastSummary.getCategory().equals( $forecastDomain ) )
+					<tr>
+						<td>
+
+					#if ( $forecastSummary.getDone() )
+							<div class="w3-container w3-grey w3-border w3-leftbar w3-border-dark-grey w3-hover-light-grey forecast-card class$forecastSummary.getForecast().getKey()">
+					#elseif ( $forecastSummary.getExcessiveDateChange() )
+							<div class="w3-container w3-yellow w3-border w3-leftbar w3-border-red w3-hover-pale-yellow forecast-card class$forecastSummary.getForecast().getKey()">
+					#else
+							<div class="w3-container w3-aqua w3-border w3-leftbar w3-border-blue w3-hover-pale-blue forecast-card class$forecastSummary.getForecast().getKey()">
+					#end
+
+								<div class="contributionOverview">
+									<div class="contributionInfo contributionLink"><a href="/browse/$forecastSummary.getForecast().getKey()" target="_blank" title="Edit...">&#9998;</a></div>
+									<div onclick="toggleDetails('cardDetailsId$forecastSummary.getForecast().getKey()'); return false;">
+										<div><span class="ofLabel">Summary:</span> $forecastSummary.getForecast().getSummary()</div>
+										<div title="Last updated (days)" class="contributionInfo lastUpdatedWarning
+					#if ( $lastUpdatedWarningThreshold > 0 && $forecastSummary.getLastUpdatedInDaysAgo() > $lastUpdatedWarningThreshold ) w3-red 
+					#elseif ( $lastUpdatedWarningThreshold > 0 && $forecastSummary.getLastUpdatedInDaysAgo() > ($lastUpdatedWarningThreshold*0.75) ) w3-amber 
+					#else
+					#end
+										">LU: $forecastSummary.getLastUpdatedInDaysAgo()</div>
+										<div><span class="ofLabel">Status:</span> $forecastSummary.getStatus()</div>
+										<div><span class="ofLabel">Assignee:</span> $!forecastSummary.getAssignee()</div>
+										<div><span class="ofLabel">Total Value:</span> $decimalFormatter.format( $forecastSummary.getTotalAmount().longValue() )</div>
+										<div><span class="ofLabel">Current $forecastDateToUse:</span> $MMMddyyyyFormatter.format( $forecastSummary.getForecastDateToUse( $forecastDateToUse ) )</div>
+										<div><span class="ofLabel" title="The last reviewed date or the original date if unreviewed">Reviewed $forecastDateToUse:</span> $MMMddyyyyFormatter.format( $forecastSummary.getLastReviewedDate( $forecastDateToUse ) )</div>
+		
+										<div id="cardDetailsId$forecastSummary.getForecast().getKey()" style="display:none;">
+					#if ( $forecastSummary.getForecastDateToUseChanges() )
+											<div><span class="ofLabel">Changes to $forecastDateToUse:</span> &nbsp;</div>
+											<table class="forecastChangeHistory">
+						#foreach ( $change in $forecastSummary.getForecastDateToUseChanges() )
+							#set( $changeDatePerformed = $MMMddyyyyFormatter.format( $change.getDatePerformed() ) )
+							#set( $changeAction = $change.getAction().toUpperCase() )
+							#set( $changeUser = $change.getUserDisplayName() )
+							#set( $changeOldValue = $change.getOldValue() )
+							#set( $changeNewValue = $change.getNewValue() )
+												<tr>
+							#if ( $changeAction.equalsIgnoreCase("change") )
+													<td>&nbsp;<span title="Changed on $changeDatePerformed" style="font-weight:bold">&#9998;</span>&nbsp;</td><td><span title="Changed on $changeDatePerformed">$MMMddyyyyFormatter.format($yyyyMMddFormatter.parse($changeOldValue)) to $MMMddyyyyFormatter.format($yyyyMMddFormatter.parse($changeNewValue)) by $changeUser</span></td>
+							#elseif ( $changeAction.equalsIgnoreCase("review") )
+													<td>&nbsp;<span title="Reviewed on $changeDatePerformed" style="font-weight:bold; color:green">&#11044;</span>&nbsp;</td><td><span title="Reviewed on $changeDatePerformed">Reviewed by $changeUser</span></td>
+							#else
+													<td>&nbsp;<span title="Changed on $changeDatePerformed" style="font-weight:bold; color:red">&#11044;</span>&nbsp;</td><td><span title="Changed on $changeDatePerformed">$MMMddyyyyFormatter.format($yyyyMMddFormatter.parse($changeOldValue)) to $MMMddyyyyFormatter.format($yyyyMMddFormatter.parse($changeNewValue)) by $changeUser</span>
+														<br/><span style="font-style:italic">CROSSED FISCAL $changeAction BOUNDARY</a>
+													</td>
+							#end
+												</tr>
+						#end
+											</table>
+					#end
+											<div><span class="ofLabel">&nbsp;</span> &nbsp; </div>
+					#if ( $forecastSummary.getForecast().getParentObject() )
+											<div><span class="ofLabel">Parent Issue:</span> <a href="/browse/$forecastSummary.getForecast().getParentObject().getKey()" target="_blank" title="Edit Parent...">$forecastSummary.getForecast().getParentObject().getSummary()</a></div>
+					#end
+											<div><span class="ofLabel">Category:</span> $forecastSummary.getCategory()</div>
+											<div><span class="ofLabel">Description:</span> $forecastSummary.getFormattedDescription()</div>
+					#if ( $forecastSummary.getDebugMessage() )
+											<div><span class="ofLabel">Debug:</span> $forecastSummary.getDebugMessage()</div>
+					#end
+										</div>
+									</div>
+								</div>
+					
+							</div>
+
+						</td>
+					</tr>
+				#end
+			#end
+				</tbody>
+				</table>
+
+		#else
+				&nbsp;
+		#end
+		
+		</td>
+	#end
+	</tr>
+#end
+
+</tbody>
+</table>
+
+<script>
+var json_forecastSummaries = $jsonForecastSummariesWithHtml;
+</script>
+
+## END ##########################################
+
+

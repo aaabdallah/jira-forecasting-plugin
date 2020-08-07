@@ -1,0 +1,62 @@
+Forecasts must be subtask issue types to allow them to be used with any kind of issue type.
+This allows maximum flexibility: different organizational units can create different kinds
+of issues types, then add forecasts with those issues.
+
+Find proper issue type avatar id
+Create subtask issue type "Forecast"
+Create permission group at project level "forecast-managers"
+	- (?) is this necessary, perhaps not. It can (should) be added
+	to each project as needed. Code should operate in absence of such
+	group.
+
+Create custom field "Forecast Amount"
+	- limit to Forecast Issue type
+Create custom field "Forecast Domain"
+	- limit to Forecast Issue type
+	- if already existing, do not modify options
+	- REJECTED: use the Component field (check projects: are they using this?)
+		- only use Components starting with "~ Forecast Domain:"
+		- tilde is ASCII chart late
+Create custom field "Forecast Strength"
+	- limit to Forecast Issue Type
+	- if already existing, do not modify options
+Create custom field "Forecast Notes"
+	- limit to Forecast Issue type
+Create custom field "Flag: Excessive Due Date Change"
+	- limit to Forecast Issue Type
+	- boolean
+	- can only be cleared by member-of project group "forecast-managers"
+		- REJECTED: should be done project by project, group by group
+Create custom field "Flag: Weakened Forecast Strength"
+	- limit to Forecast Issue Type
+	- boolean
+	- can only be cleared by member-of project group "forecast-managers"
+		- REJECTED: should be done project by project, group by group
+
+Create create, edit, and view screens for Forecasts
+
+Create JQL function excessiveDueDateChange(project) returns all such issues
+Create JQL function weakenedForecastStrength(project) returns all such issues
+
+Report page
+- show calendar week by week, month by month, quarter by quarter
+- display forecasts in a table divided into years, quarters, months, weeks, days
+	- allow interactive movements of forecasts across cells
+- display widget to show forecast amount
+	- includes filter bar at the top
+	- chart updates to filter changes to display only matching issues
+
+Admin Page
+- delete all Forecast issues (filtered by project)
+
+Revenue Forecast Report
+- find all filtered forecast tasks and subtasks
+- display year table divided into month rows
+	- rows to allow easy display of forecast summaries
+- in each month row, show
+	- forecasts whose amount is influencing the month, by how much
+	- total of forecast amounts per month at right of row
+- allow filtering
+	- commits, upsides, both
+	- specific projects
+

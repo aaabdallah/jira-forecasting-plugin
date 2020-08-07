@@ -1,0 +1,22 @@
+$webResourceManager.requireResourcesForContext("sa.com.ruhtlc.cloud.jira.forecasting")
+
+<link href="/download/resources/sa.com.ruhtlc.cloud.jira.forecasting:forecasting-resources/forecasting.css" rel="stylesheet"/>
+<link href="/download/resources/sa.com.ruhtlc.cloud.jira.forecasting:forecasting-resources/w3-modified.css" rel="stylesheet"/>
+
+<div class="aui-message aui-message-error">
+	<p class="title">
+		<strong>$!title</strong>
+	</p>
+	<p>$!body</p>
+
+#if ( $exception )
+	<pre>
+	Error: $exception.getMessage()
+	Details:
+	#foreach($stack in $exception.getStackTrace())
+		$stack.toString()
+	#end
+	</pre>
+#end
+
+</div>

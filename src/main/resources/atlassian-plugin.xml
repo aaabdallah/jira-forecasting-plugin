@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<atlassian-plugin key="${atlassian.plugin.key}" name="${project.name}" plugins-version="2">
+  <plugin-info>
+    <description>${project.description}</description>
+    <version>${project.version}</version>
+    <vendor name="${project.organization.name}" url="${project.organization.url}"/>
+    <param name="plugin-icon">images/pluginIcon.png</param>
+    <param name="plugin-logo">images/pluginLogo.png</param>
+    <!-- <param name="configure.url">/secure/ForecastingPluginGeneralConfigurationModuleAction!default.jspa</param> -->
+  </plugin-info>
+  <!-- add our single, unified i18n resource -->
+  <resource type="i18n" name="i18n" location="/i18n/forecasting"/>
+
+  <!-- add our web resources -->
+  <web-resource key="forecasting-resources" name="forecasting Web Resources">
+    <dependency>com.atlassian.auiplugin:ajs</dependency>
+    <resource type="download" name="forecasting.css" location="/css/forecasting.css"/>
+    <resource type="download" name="w3-modified.css" location="/css/w3-modified.css"/>
+    <resource type="download" name="c3.min.css" location="/css/pivottable/c3.min.css"/>
+    <resource type="download" name="pivot.css" location="/css/pivottable/pivot.css"/>
+    <resource type="download" name="dc.css" location="/css/dc.css"/>
+
+    <resource type="download" name="images/" location="images/"/>
+
+    <resource type="download" name="crossfilter.js" location="/js/crossfilter.js"/>
+    <resource type="download" name="d3.min.js" location="/js/d3.min.js"/>
+    <resource type="download" name="d3-color.min.js" location="/js/d3-color.min.js"/>
+    <resource type="download" name="d3-interpolate.min.js" location="/js/d3-interpolate.min.js"/>
+    <!-- <resource type="download" name="d3-scale-chromatic.js" location="/js/d3-scale-chromatic.js"/> -->
+    <resource type="download" name="dc.js" location="/js/dc.js"/>
+    <resource type="download" name="FileSaver.min.js" location="/js/FileSaver.min.js"/>
+    <resource type="download" name="pivot.min.js" location="/js/pivottable/pivot.min.js"/>
+    <resource type="download" name="c3.min.js" location="/js/pivottable/c3.min.js"/>
+    <resource type="download" name="c3_renderers.min.js" location="/js/pivottable/c3_renderers.min.js"/>
+    <resource type="download" name="d3_renderers.min.js" location="/js/pivottable/d3_renderers.min.js"/>
+    <resource type="download" name="export_renderers.min.js" location="/js/pivottable/export_renderers.min.js"/>
+    <resource type="download" name="gchart_renderers.min.js" location="/js/pivottable/gchart_renderers.min.js"/>
+
+    <context>sa.com.ruhtlc.cloud.jira.forecasting</context>
+    <context>com.atlassian.jira.project.reports.page</context>
+  </web-resource>
+
+  <component-import key="eventPublisher" interface="com.atlassian.event.api.EventPublisher"/>
+  <component key="eventListener" class="sa.com.ruhtlc.cloud.jira.forecasting.listeners.PluginListener">
+    <description>Class that processes the incoming JIRA issue events.</description>
+  </component>
+
+  <report name="Schedule Forecast by Fiscal Week Report" i18n-name-key="scscjf.report.scheduleforecast.fiscalweek.name" 
+  	key="scscjf.report.scheduleforecast.fiscalweek.9" class="sa.com.ruhtlc.cloud.jira.forecasting.reports.ScheduleForecastByFiscalWeekReport">
+    <description key="scscjf.report.scheduleforecast.fiscalweek.description">A report to summarize forecasted schedule over a set of fiscal weeks.</description>
+
+    <resource name="view" type="velocity" location="/templates/reports/schedule-forecast/schedule-forecast-by-fiscal-week-report/view.vm"/>
+    <resource name="error" type="velocity" location="/templates/reports/error.vm"/>
+
+    <label key="scscjf.report.scheduleforecast.fiscalweek.label"/>
+    <!-- see https://developer.atlassian.com/jiradev/latest-updates/developer-changes-for-older-jira-versions/preparing-for-jira-6-4#PreparingforJIRA6.4-reportpluginmodule -->
+    <thumbnail cssClass="schFctCss"/>
+    <!-- the properties of this report which the user must select before running it -->
+    <properties>
+      <property>
+        <key>forecastsId</key>
+        <name>scscjf.report.parameter.forecastsid.name</name>
+        <description>scscjf.report.parameter.forecastsid.description</description>
+        <type>filterprojectpicker</type>
+      </property>
+      <property>
+        <key>startYear</key>
+        <name>scscjf.report.fiscalweek.parameter.startyear.name</name>
+        <description>scscjf.report.fiscalweek.parameter.startyear.description</description>
+        <type>select</type>
+        <default>2016</default>
+        <values class="sa.com.ruhtlc.cloud.jira.forecasting.reports.generators.YearValuesGenerator"/>
+      </property>
+      <property>
+        <key>startWeek</key>
+        <name>scscjf.report.fiscalweek.parameter.startweek.name</name>
+        <description>scscjf.report.fiscalweek.parameter.startweek.description</description>
+        <type>select</type>
+        <values class="sa.com.ruhtlc.cloud.jira.forecasting.reports.generators.FiscalWeekValuesGenerator"/>
+      </property>
+      <property>
+        <key>endYear</key>
+        <name>scscjf.report.fiscalweek.parameter.endyear.name</name>
+        <description>scscjf.report.fiscalweek.parameter.endyear.description</description>
+        <type>select</type>
+        <default>2016</default>
+        <values class="sa.com.ruhtlc.cloud.jira.forecasting.reports.generators.YearValuesGenerator"/>
+      </property>
+      <property>
+        <key>endWeek</key>
+        <name>scscjf.report.fiscalweek.parameter.endweek.name</name>
+        <description>scscjf.report.fiscalweek.parameter.endweek.description</description>
+        <type>select</type>
+        <values class="sa.com.ruhtlc.cloud.jira.forecasting.reports.generators.FiscalWeekValuesGenerator"/>
+      </property>
+      <property>
+        <key>forecastDateToUse</key>
+        <name>scscjf.report.parameter.hidden.name</name> 
+        <!-- Strange bug: name is needed but blank otherwise it is displayed. If not present, yields an internal error. -->
+        <description></description> <!-- just in case -->
+        <type>hidden</type>
+        <default>Delivery Date</default>
+        <values>
+        	<value><key>Delivery Date</key><value>Delivery Date</value></value>
+        </values>
+      </property>
+      <!-- 
+      <property>
+        <key>forecastDateToUse</key>
+        <name>scscjf.report.fiscalweek.parameter.forecastdatetouse.name</name>
+        <description>scscjf.report.fiscalweek.parameter.forecastdatetouse.description</description>
+        <type>select</type>
+        <default>Delivery Date</default>
+        <values>
+        	<value><key>Closing Date</key><value>Closing Date</value></value>
+        	<value><key>Booking Date</key><value>Booking Date</value></value>
+        	<value><key>Delivery Date</key><value>Delivery Date</value></value>
+        	<value><key>Recognition Date</key><value>Recognition Date</value></value>
+        </values>
+      </property>
+       -->
+      <property>
+        <key>lastUpdatedWarningThreshold</key>
+        <name>scscjf.report.parameter.lastupdatedwarningthreshold.name</name>
+        <description>scscjf.report.parameter.lastupdatedwarningthreshold.description</description>
+        <type>string</type>
+        <default>7</default>
+      </property>
+    </properties>
+  </report>
+
+  <report name="Forecast Analytics Dashboard Report" i18n-name-key="scscjf.report.forecastanalytics.dashboard.name" 
+  	key="scscjf.report.forecastanalytics.dashboard.20" class="sa.com.ruhtlc.cloud.jira.forecasting.reports.ForecastAnalyticsDashboardReport">
+    <description key="scscjf.report.forecastanalytics.dashboard.description"/>
+
+    <resource name="view" type="velocity" location="/templates/reports/forecast-analytics/forecast-analytics-dashboard-report/view.vm"/>
+    <resource name="error" type="velocity" location="/templates/reports/error.vm"/>
+
+    <label key="scscjf.report.forecastanalytics.dashboard.label"/>
+    <!-- see https://developer.atlassian.com/jiradev/latest-updates/developer-changes-for-older-jira-versions/preparing-for-jira-6-4#PreparingforJIRA6.4-reportpluginmodule -->
+    <thumbnail cssClass="fctAnlDshCss"/>
+    <!-- the properties of this report which the user must select before running it -->
+    <properties>
+      <property>
+        <key>forecastsId</key>
+        <name>scscjf.report.parameter.forecastsid.name</name>
+        <description>scscjf.report.parameter.forecastsid.description</description>
+        <type>filterprojectpicker</type>
+      </property>
+      <property>
+        <key>startYear</key>
+        <name>scscjf.report.fiscalweek.parameter.startyear.name</name>
+        <description>scscjf.report.fiscalweek.parameter.startyear.description</description>
+        <type>select</type>
+        <default>2016</default>
+        <values class="sa.com.ruhtlc.cloud.jira.forecasting.reports.generators.YearValuesGenerator"/>
+      </property>
+      <property>
+        <key>forecastDateToUse</key>
+        <name>scscjf.report.parameter.hidden.name</name> 
+        <!-- Strange bug: name is needed but blank otherwise it is displayed. If not present, yields an internal error. -->
+        <description></description> <!-- just in case -->
+        <type>hidden</type>
+        <default>Delivery Date</default>
+        <values>
+        	<value><key>Delivery Date</key><value>Delivery Date</value></value>
+        </values>
+      </property>
+      <!-- 
+      <property>
+        <key>forecastDateToUse</key>
+        <name>scscjf.report.fiscalweek.parameter.forecastdatetouse.name</name>
+        <description>scscjf.report.fiscalweek.parameter.forecastdatetouse.description</description>
+        <type>select</type>
+        <default>Delivery Date</default>
+        <values>
+        	<value><key>Closing Date</key><value>Closing Date</value></value>
+        	<value><key>Booking Date</key><value>Booking Date</value></value>
+        	<value><key>Delivery Date</key><value>Delivery Date</value></value>
+        	<value><key>Recognition Date</key><value>Recognition Date</value></value>
+        </values>
+      </property>
+       -->
+      <property>
+      	<key>extraFieldFilters</key>
+      	<name>scscjf.report.forecastanalytics.dashboard.parameter.extrafieldfilters.name</name>
+      	<description>scscjf.report.forecastanalytics.dashboard.parameter.extrafieldfilters.description</description>
+        <type>multiselect</type>
+        <values class="sa.com.ruhtlc.cloud.jira.forecasting.reports.generators.DashboardFilterValuesGenerator"/>
+      </property>
+      <property>
+        <key>startWeek</key>
+        <name>scscjf.report.parameter.hidden.name</name> 
+        <!-- Strange bug: name is needed but blank otherwise it is displayed. If not present, yields an internal error. -->
+        <description></description> <!-- just in case -->
+        <type>hidden</type>
+        <values><value><key>1</key><value>1</value></value></values>
+        <default>1</default>
+      </property>
+      <property>
+        <key>endYear</key>
+        <name>scscjf.report.parameter.hidden.name</name> 
+        <!-- Strange bug: name is needed but blank otherwise it is displayed. If not present, yields an internal error. -->
+        <description></description> <!-- just in case -->
+        <type>hidden</type>
+        <values><value><key>0</key><value>0</value></value></values>
+        <default>0</default>
+      </property>
+      <property>
+        <key>endWeek</key>
+        <name>scscjf.report.parameter.hidden.name</name> 
+        <!-- Strange bug: name is needed but blank otherwise it is displayed. If not present, yields an internal error. -->
+        <description></description> <!-- just in case -->
+        <type>hidden</type>
+        <values><value><key>53</key><value>53</value></value></values>
+        <default>53</default>
+      </property>
+      <property>
+        <key>lastUpdatedWarningThreshold</key>
+        <name>scscjf.report.parameter.hidden.name</name>
+        <!-- Strange bug: name is needed but blank otherwise it is displayed. If not present, yields an internal error. -->
+        <description></description> <!-- just in case -->
+        <type>hidden</type>
+        <values><value><key>7</key><value>7</value></value></values>
+        <default>7</default>
+      </property>
+    </properties>
+  </report>
+
+  <report name="Forecast Pivot Table Report" i18n-name-key="scscjf.report.forecastanalytics.pivottable.name" 
+  	key="scscjf.report.forecastanalytics.pivottable.12" class="sa.com.ruhtlc.cloud.jira.forecasting.reports.ForecastAnalyticsDashboardReport">
+    <description key="scscjf.report.forecastanalytics.pivottable.description"/>
+
+    <resource name="view" type="velocity" location="/templates/reports/forecast-analytics/forecast-analytics-pivot-table-report/view.vm"/>
+    <resource name="error" type="velocity" location="/templates/reports/error.vm"/>
+
+    <label key="scscjf.report.forecastanalytics.pivottable.label"/>
+    <!-- see https://developer.atlassian.com/jiradev/latest-updates/developer-changes-for-older-jira-versions/preparing-for-jira-6-4#PreparingforJIRA6.4-reportpluginmodule -->
+    <thumbnail cssClass="fctAnlPvtCss"/>
+    <!-- the properties of this report which the user must select before running it -->
+    <properties>
+      <property>
+        <key>forecastsId</key>
+        <name>scscjf.report.parameter.forecastsid.name</name>
+        <description>scscjf.report.parameter.forecastsid.description</description>
+        <type>filterprojectpicker</type>
+      </property>
+      <property>
+        <key>startYear</key>
+        <name>scscjf.report.fiscalweek.parameter.startyear.name</name>
+        <description>scscjf.report.fiscalweek.parameter.startyear.description</description>
+        <type>select</type>
+        <default>2016</default>
+        <values class="sa.com.ruhtlc.cloud.jira.forecasting.reports.generators.YearValuesGenerator"/>
+      </property>
+      <property>
+        <key>startWeek</key>
+        <name>scscjf.report.fiscalweek.parameter.startweek.name</name>
+        <description>scscjf.report.fiscalweek.parameter.startweek.description</description>
+        <type>select</type>
+        <values class="sa.com.ruhtlc.cloud.jira.forecasting.reports.generators.FiscalWeekValuesGenerator"/>
+      </property>
+      <property>
+        <key>endYear</key>
+        <name>scscjf.report.fiscalweek.parameter.endyear.name</name>
+        <description>scscjf.report.fiscalweek.parameter.endyear.description</description>
+        <type>select</type>
+        <default>2016</default>
+        <values class="sa.com.ruhtlc.cloud.jira.forecasting.reports.generators.YearValuesGenerator"/>
+      </property>
+      <property>
+        <key>endWeek</key>
+        <name>scscjf.report.fiscalweek.parameter.endweek.name</name>
+        <description>scscjf.report.fiscalweek.parameter.endweek.description</description>
+        <type>select</type>
+        <default>2016</default>
+        <values class="sa.com.ruhtlc.cloud.jira.forecasting.reports.generators.FiscalWeekValuesGenerator"/>
+      </property>
+      <property>
+        <key>forecastDateToUse</key>
+        <name>scscjf.report.parameter.hidden.name</name> 
+        <!-- Strange bug: name is needed but blank otherwise it is displayed. If not present, yields an internal error. -->
+        <description></description> <!-- just in case -->
+        <type>hidden</type>
+        <default>Delivery Date</default>
+        <values>
+        	<value><key>Delivery Date</key><value>Delivery Date</value></value>
+        </values>
+      </property>
+      <!-- 
+      <property>
+        <key>forecastDateToUse</key>
+        <name>scscjf.report.fiscalweek.parameter.forecastdatetouse.name</name>
+        <description>scscjf.report.fiscalweek.parameter.forecastdatetouse.description</description>
+        <type>select</type>
+        <default>Delivery Date</default>
+        <values>
+        	<value><key>Closing Date</key><value>Closing Date</value></value>
+        	<value><key>Booking Date</key><value>Booking Date</value></value>
+        	<value><key>Delivery Date</key><value>Delivery Date</value></value>
+        	<value><key>Recognition Date</key><value>Recognition Date</value></value>
+        </values>
+      </property>
+       -->
+      <property>
+      	<key>extraFieldFilters</key>
+      	<name>scscjf.report.forecastanalytics.dashboard.parameter.extrafieldfilters.name</name>
+      	<description>scscjf.report.forecastanalytics.dashboard.parameter.extrafieldfilters.description</description>
+        <type>multiselect</type>
+        <values class="sa.com.ruhtlc.cloud.jira.forecasting.reports.generators.DashboardFilterValuesGenerator"/>
+      </property>
+      <property>
+        <key>lastUpdatedWarningThreshold</key>
+        <name>scscjf.report.parameter.hidden.name</name>
+        <!-- Strange bug: name is needed but blank otherwise it is displayed. If not present, yields an internal error. -->
+        <description></description> <!-- just in case -->
+        <type>hidden</type>
+        <values><value><key>7</key><value>7</value></value></values>
+        <default>7</default>
+      </property>
+    </properties>
+  </report>
+
+  <workflow-function key="move-forecast-subtasks-post-function" name="Move Forecast Subtasks Post Function" 
+  		i18n-name-key="scscjf.postfunction.moveforecastsubtasks.name" 
+  		class="sa.com.ruhtlc.cloud.jira.forecasting.workflow.postfunctions.WorkflowNoInputPluginFactoryWrapper">
+    <description key="scscjf.postfunction.moveforecastsubtasks.description">The Move Forecast Subtasks Post Function Plugin</description>
+    <function-class>sa.com.ruhtlc.cloud.jira.forecasting.workflow.postfunctions.MoveForecastSubtasksPostFunction</function-class>
+    <orderable>true</orderable>
+    <unique>false</unique>
+    <deletable>true</deletable>
+    <resource type="velocity" name="view" location="templates/postfunctions/move-forecast-subtasks-post-function/view.vm"/>
+  </workflow-function>
+  
+  <!-- Administration GUI interface for updating custom field options "quickly" -->
+  <web-item key="scscjf.web.admin.sidebar.item.updatecustomfieldoptions" name="Update Custom Fields Link" 
+  		section="element_options_section/fields_section"
+  		i18n-name-key="scscjf.web.admin.sidebar.item.updatecustomfieldoptions.name" weight="1000">
+  	<description key="scscjf.web.admin.sidebar.item.updatecustomfieldoptions.description"/>
+	<label key="scscjf.web.admin.sidebar.item.updatecustomfieldoptions.label"/>
+	<link linkId="scscjf.web.admin.sidebar.item.updatecustomfieldoptions.link">/secure/UpdateCustomFieldOptionsPlugin!default.jspa</link>
+  </web-item>
+  <webwork1 key="scscjf.webwork.admin.sidebar.item.updatecustomfieldoptions" name="Update custom field options" 
+  		i18n-name-key="scscjf.webwork.admin.sidebar.item.updatecustomfieldoptions.name" roles-required="sysadmin">
+    <description key="scscjf.webwork.admin.sidebar.item.updatecustomfieldoptions.description"/>
+    <actions>
+      <action name="sa.com.ruhtlc.cloud.jira.forecasting.webworks.admin.UpdateCustomFieldOptionsAction" alias="UpdateCustomFieldOptionsPlugin">
+        <view type="velocity" name="input">/templates/web/admin/update-custom-field-options/input.vm</view>
+      </action>
+    </actions>
+  </webwork1>
+
+</atlassian-plugin>

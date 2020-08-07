@@ -1,0 +1,300 @@
+.reportHeader {
+	table-layout : fixed;
+	font-style : italic;
+	font-weight : bold;
+	font-size : 125%;
+	padding: 0.5em 1em;
+	border-top : 1px dotted black;
+	border-bottom : 1px dotted black;
+}
+.reportHeader td {
+	text-align : left;
+	padding-right : 4em;
+}
+.scheduleForecastTable {
+	border-collapse: collapse; 
+	border: 0; 
+	margin-top : 1em; 
+	margin-left:auto; 
+	margin-right:auto;
+	background-color: white;
+}
+.weekColumn {
+	border-left : 1px dotted gray;
+	border-right : 1px dotted gray;
+}
+col.domainColumn {
+}
+.headerRow {
+	border-top : 4px solid black;
+	font-weight : bold;
+	text-align : center;
+	white-space : nowrap;
+}
+.lightRow {
+	background-color: white;
+	padding: 0px;
+}
+.darkRow {
+	background-color: lightgrey;
+	padding: 0px;
+}
+.weekHeader {
+	text-align : center;
+}
+.week {
+	text-align : center;
+}
+.weekTotal {
+	text-align : right;
+	vertical-align : bottom;
+	padding : 0 1em;
+}
+.headerRow td {
+	padding : 0 1em 0 1em;
+}
+.domainCell {
+	font-weight : bold;
+	font-size : 125%;
+	white-space : nowrap;
+	padding : 0.5em;
+}
+.forecastsCell {
+	vertical-align: top;
+}
+.emphasizedTopBorder {
+	border-top : 2px solid black;
+}
+.regularTopBorder {
+	border-top : 1px dotted gray;
+}
+.weekofyearHighlight {
+	color : gray;
+	font-weight : bold;
+	font-size : 75%;
+}
+.quarterHighlight {
+	color : red;
+	font-weight : bold;
+	font-size : 75%;
+}
+.monthHighlight {
+	color : blue;
+	font-weight : bold;
+	font-size : 75%;
+}
+.weekHighlight {
+	color : green;
+	font-weight : bold;
+	font-size : 75%;
+}
+.reportButton:active {
+	transform: translateY(2px);
+}
+#reportContainer .forecastCardTab {
+	padding-top: 2px; 
+	padding-bottom:1px;
+	margin:10px 5px 0px 5px;
+	white-space: nowrap;
+	font-size : 12px;
+	font-weight : bold;
+	text-align : center;
+}
+#reportContainer .forecastCard {
+	width : 20em;
+	font-size : 12px;
+	margin : 0 5px 5px 5px;
+	display: flex;
+	flex-direction : column;
+}
+.contributionTable {
+	width: 100%;
+	border: 0;
+	text-align : left;
+}
+.contributionOverview {
+	width : 100%;
+	cursor : pointer;
+}
+.ofLabel {
+	font-weight : bold;
+	white-space : nowrap;
+}
+table.forecastChangeHistory {
+	border-collapse : collapse;
+	border : 0;
+	font-size : 90%;
+	margin-top: 3px;
+}
+table.forecastChangeHistory td {
+	vertical-align: top;
+	border-top:1px dotted gray; 
+	border-bottom:1px dotted gray
+}
+.contributionAssignee {
+	white-space : nowrap;
+}
+.contributionAmount {
+	font-size:80%; 
+}
+#reportContainer .forecastCard .rightWidget {
+	float : right;
+	margin : 0px;
+	white-space: nowrap;
+}
+.forecastCardLink, .forecastCardLink a, .forecastCardLink span {
+	text-decoration : none;
+	color : inherit;
+	cursor: pointer;
+}
+.lastUpdatedWarning {
+	font-size:80%; 
+	padding:0 5px
+}
+.highlight {
+	text-decoration : none;
+	color : inherit;
+	cursor: pointer;
+}
+a.schFctCss, a.schFctCss:before {
+	background-repeat : no-repeat;
+	background-image : url("images/scheduleforecast.png");
+}
+a.fctAnlDshCss, a.fctAnlDshCss:before {
+	background-repeat : no-repeat;
+	background-image : url("images/forecastanalyticsdashboard.png");
+}
+a.fctAnlPvtCss, a.fctAnlPvtCss:before {
+	background-repeat : no-repeat;
+	background-image : url("images/forecastanalyticspivottable.png");
+}
+.dashboardRow {
+	margin : 0 auto 0 auto;
+	display: -webkit-flex;
+	display: flex;
+	align-items: center;
+	justify-content : flex-start;
+	font : sans-serif;
+}
+span.selectedfilters {
+	font-style:italic
+}
+.dcchart {
+}
+span.highlightRY {
+	font-weight : bold;
+	color : red;
+	background-color : yellow;
+}
+table.table_sales a {
+	text-decoration : underline;
+	color : inherit;
+	cursor: pointer;
+}
+/* , #dashboardAndTableContainer .dc-chart g.pie-label-group text */
+#dashboardAndTableContainer .dc-chart g.row text {
+	fill: black;
+}
+#dashboardAndTableContainer .dashboardButton {
+	font-weight : bold;
+	margin-right : 0.5em;
+}
+.extraFieldChart {
+	padding : 1em;
+}
+.extraFieldChartContainer {
+	border : 1px dotted gray;
+	margin : 1em;
+	float : left;
+	width : 400px;
+	height : 300px;
+	overflow-x : hidden;
+	overflow-y : scroll;
+}
+#pivottable table.pvtTable, #pivottable table.pvtTable thead tr th, #pivottable table.pvtTable tbody tr th {
+	font-size : 10pt;
+}
+#table_sales th {
+	cursor: pointer;
+}
+
+/* BEGIN: Schedule Forecast */
+#reportControlsBar {
+	margin-top : 5px;
+}
+.reportControlsPanel {
+	display : none;
+}
+.showPanel {
+	display : block;
+	border : 1px dotted gray;
+	padding : 1em 1em 2em 1em;
+}
+.reportControlsPanelCharts {
+	display: flex;
+	justify-content : flex-start;
+
+	display: -webkit-flex;
+	-webkit-justify-content: flex-start;
+}
+.reportControlsPanelCharts div.dcchart {
+	flex : 1;
+	float : none;
+}
+.reportControlsPanelCharts div.dcchart svg {
+	padding-left : 2em;
+	padding-bottom : 6em;
+}
+
+.reportControlsPanelCharts div.dcchart .x.axis text {
+	text-anchor: end !important;
+	transform: rotate(-45deg);
+}
+#chart_forecastsByDone text.pie-slice {
+	fill: black;
+}
+#grid_forecastsByPeriodContainer {
+}
+
+#grid_forecastsByPeriod {
+	margin : 5px auto 0 auto;
+	background-color: white;
+	border-style: dotted;
+	border-color: gray;
+	border-width: 0px 1px 1px 0px;
+	border-top : 3px solid black;
+	display: flex;
+	justify-content : flex-start;
+	width : 100%;
+	overflow-x : scroll;
+}
+#grid_forecastsByPeriod .grid-header {
+	text-align : center;
+	font-weight : bold;
+	white-space: nowrap;
+	border-bottom : 1px solid gray;
+}
+
+#grid_forecastsByPeriod .dc-grid-top {
+	flex : 1;
+	border-left : 1px dotted gray;
+}
+
+#grid_forecastsByPeriod .grid-item {
+	background-color : #E0E0E0;
+	margin : 3px 0;
+	padding : 0px 0.25em;
+	border : 1px solid red;
+}
+
+#grid_forecastsByPeriod .hidden-grid-item {
+	visibility : hidden;
+	width : 20em;
+}
+
+.isCurrent {
+	background-color : #40E0D0;
+	background-color : yellow;
+}
+/* END: Schedule Forecast */
+

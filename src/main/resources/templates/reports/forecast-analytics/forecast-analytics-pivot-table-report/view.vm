@@ -1,0 +1,61 @@
+$webResourceManager.requireResourcesForContext("sa.com.ruhtlc.cloud.jira.forecasting")
+
+## avoids the Velocity escaping junk.
+#set( $ajsJquery = "AJS.$" )
+
+<table class="reportHeader w3-light-grey">
+<tbody>
+	<tr>
+		<td>Report Period: $MMMddyyyyFormatter.format($reportStartingFiscalWeek.getStartingDate()) - $MMMddyyyyFormatter.format($reportEndingFiscalWeek.getEndingDate())</td>
+		<td>Forecasts Source: <a href="$forecastsSourceURL" target="_blank">$forecastsSourceName</a></td>
+	</tr>
+	<tr>
+		<td>Forecast Date Used: $forecastDateToUse</td>
+		<td>Included Forecasts: $validForecastsCount</td>
+	</tr>
+</tbody>
+</table>
+
+#if ( ! $validForecastsCount || $validForecastsCount == 0 )
+<div class="aui-message aui-message-info">
+	<p class="title">
+		<strong>No matching forecasts</strong>
+	</p>
+	<p>No forecasts were found that match the report's input parameters.</p>
+
+	#stop
+	
+#end
+
+## BEGIN ########################################
+
+<br/>
+
+<div id="pivottable"></div>
+
+
+<script>
+var json_forecastSummaries = $jsonForecastSummariesWithHtml;
+
+function constructTable()
+{
+	var allRenderers = ${ajsJquery}.extend(
+		${ajsJquery}.pivotUtilities.renderers, 
+		${ajsJquery}.pivotUtilities.c3_renderers,
+		${ajsJquery}.pivotUtilities.export_renderers);
+	
+	${ajsJquery}(function(){
+		${ajsJquery}("#pivottable")
+			.pivotUI(
+				json_forecastSummaries, 
+				{aggregatorName:"Sum", vals:["Total Value"], renderers: allRenderers}
+			);
+	});
+}
+
+constructTable();
+</script>
+
+## END ##########################################
+
+

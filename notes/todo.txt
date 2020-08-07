@@ -1,0 +1,52 @@
+- allow for option of using reduceCount instead of reduceSum, and the option of specifying the field to build aggregates with.
+
+New Approach
+- avoid masking names and fixed set of fields.
+	- too difficult to rename the fields everywhere per project; JIRA just doesn't support it.
+- use a custom field indicator:
+	- forecast due date
+- List all issue types of project
+- Given issue type, select fields that should have different option values
+
+Data Version
+Due Date
+Amount
+Duration
+Strength
+ExcessiveDueDateChange
+Weakened
+
+User can use Forecast Type, Forecast Subtype, or any other issue type with these fields added,
+in particular "Due Date".
+
+
+
+TODO
+====
+- hover over, display description
+- display summary in general
+- per fiscal year, display number of unique forecasts present per column
+- separate forecasts into columns
+- allow forecast type to be either "Revenue" or "Service Launch"
+
+
+CRITICAL
+- need to go back to database code and make it transactional
+- need to keep track of forecasts that should have been handled but resulted in errors
+- show forecast numbers which are before the period in question(?)
+- show forecast numbers which are after the period in question(?)
+- assign a bucket to each calendar month displayed (CMD)
+- based on due date
+	- for each month in the forecast duration, starting from due date:
+		- add a month to due date, then subtract one day: gives one month.
+			- if start date == 1/M then:
+				- add forecast amount to month M
+			- else
+				- divide the monthly amount across the two months M1 and M2 (if any) from CMD's
+					- determine how many days are in the forecast month. Determine how many days are in M1.
+					Use that to determine percentage of total amount. Assign to M1. Assign remainder to M2.
+
+DONE
+====
+CRITICAL
+- make due date mandatory

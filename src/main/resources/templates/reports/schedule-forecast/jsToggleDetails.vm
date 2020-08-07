@@ -1,0 +1,23 @@
+<script>
+function toggleDetails(cardDetailsId)
+{
+	AJS.$("#" + cardDetailsId).toggle();
+}
+
+function toggleEmptyWeekRows()
+{
+	AJS.$.each( AJS.$(".weekRow"), function(i, oneWeekRow)
+	{
+		var weekRowId = oneWeekRow.id.substring(7);
+		var possibleForecastSummaries = AJS.$(".forecastSummaryClass" + weekRowId);
+
+		if (possibleForecastSummaries && possibleForecastSummaries.length <= 0)
+		{
+			if (oneWeekRow.style.display == "none")
+				oneWeekRow.style.display = "";
+			else
+				oneWeekRow.style.display = "none";
+		}
+	});
+}
+</script>

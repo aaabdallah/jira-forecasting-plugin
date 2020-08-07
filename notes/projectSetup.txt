@@ -1,0 +1,3 @@
+1. Add the Forecast and/or Forecast Subtask issue types.
+2. Associate the Forecast Screen with the two issue types above.
+3. Add the Move Forecast Subtask postfunction to all workflow transitions.

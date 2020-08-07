@@ -1,0 +1,216 @@
+<header class="aui-page-header aui-page-header-fixed header-with-border">
+	<div class="aui-page-header-inner">
+		<div class="aui-page-header-main">
+			<h1>Configure Project - Forecast Field Options</h1>
+		</div>
+	</div>
+</header>
+        
+<div class="aui-page-panel">
+	<div class="aui-page-panel-inner">
+		<section class="aui-page-panel-content">
+		
+#if (${action.hasErrorMessages})
+			<div class="aui-message error">
+				<span class="aui-icon icon-error"></span>
+	#foreach ($errorMsg in ${action.flushedErrorMessages})
+				<p>$errorMsg</p>
+	#end
+			</div>
+#* if (${action.hasErrorMessages}) *#
+#else
+
+			<a href="/plugins/servlet/project-config/$projectObject.getKey()" class="aui-button aui-button-link" style="float:right; margin-right:10px">Back to Project Configuration</a>
+			<span style="float:right; margin-right:10px; padding:4px 0">&nbsp;|&nbsp;</span>
+			<a href="/browse/$projectObject.getKey()" class="aui-button aui-button-link" style="float:right; margin-right:10px">Back to Project</a>
+
+			<form action="#" method="post" class="aui">
+
+#************************************************#
+
+			<h2 class="reports__category">Forecast Categories ($forecastCategoriesLength)</h2>
+			<table id="forecast-categories" border="0" cellpadding="0" cellspacing="0" class="aui">
+				
+				<thead>
+					<tr>
+						<th id="fc-name">Name</th>
+						<th id="fc-enabled">Enabled</th>
+						<th id="fc-customized-name">Customized Name</th>
+						<th id="fc-allowed-values">Allowed Values</th>
+					</tr>
+				</thead>
+				
+				<tbody>
+
+#set( $i = 0 )
+#foreach ($forecastCategory in $forecastCategories )
+	#set( $key = $action.getForecastCategoryKey($i) )
+	#set( $i = $i+1 )
+	#if ( $i <= 9 )
+		#set( $s = "0" + $i )
+	#else
+		#set( $s = $i )
+	#end
+	
+	#if ( $fieldSettings.get( $key ).getEnabled() )
+		#set( $enabled = "checked='checked'" )
+	#else
+		#set( $enabled = "" )
+	#end
+	#set( $customName = $fieldSettings.get( $key ).getCustomName() )
+	#set( $allowedValuesAsString = $fieldSettings.get( $key ).getAllowedValuesAsString() )
+	#set( $textareaHeightForAllowedValues = $fieldSettings.get( $key ).getTextareaHeightForAllowedValues() )
+					<tr>
+						<td headers="fc-name">Forecast Category $s</td>
+						<td headers="fc-enabled">
+							<div class="checkbox">
+								<input type="checkbox" id="enabled$key" name="enabled$key" class="checkbox" $enabled/>
+							</div>
+						</td>
+						<td headers="fc-customized-name">
+							<input type="text" id="customName$key" name="customName$key" class="text" value="$!customName"/>
+	#if ( $errors && $errors.get("customName$key") )
+							<div class="error">$errors.get("customName$key")</div>
+	#end
+						</td>
+						<td headers="fc-allowed-values">
+							<textarea id="allowedValuesAsString$key" name="allowedValuesAsString$key" class="textarea" rows="$textareaHeightForAllowedValues">$!allowedValuesAsString</textarea>
+	#if ( $errors && $errors.get("allowedValuesAsString$key") )
+							<div class="error">$errors.get("allowedValuesAsString$key")</div>
+	#end
+						</td>
+					</tr>
+#end
+				
+				</tbody>
+			</table>
+
+#************************************************#
+
+			<h2 class="reports__category">Secondary Assignee Fields ($forecastSecondaryAssigneesLength)</h2>
+			<table id="forecast-categories" border="0" cellpadding="0" cellspacing="0" class="aui">
+				
+				<thead>
+					<tr>
+						<th id="fsa-name">Name</th>
+						<th id="fsa-enabled">Enabled</th>
+						<th id="fsa-customized-name">Customized Name</th>
+						<th id="fsa-allowed-values">Allowed Values</th>
+					</tr>
+				</thead>
+				
+				<tbody>
+
+#set( $i = 0 )
+#foreach ($forecastSecondaryAssignee in $forecastSecondaryAssignees )
+	#set( $key = $action.getForecastSecondaryAssigneeKey($i) )
+	#set( $i = $i+1 )
+	#if ( $i <= 9 )
+		#set( $s = "0" + $i )
+	#else
+		#set( $s = $i )
+	#end
+	
+	#if ( $fieldSettings.get( $key ).getEnabled() )
+		#set( $enabled = "checked='checked'" )
+	#else
+		#set( $enabled = "" )
+	#end
+	#set( $customName = $fieldSettings.get( $key ).getCustomName() )
+	#set( $allowedValuesAsString = $fieldSettings.get( $key ).getAllowedValuesAsString() )
+	#set( $textareaHeightForAllowedValues = $fieldSettings.get( $key ).getTextareaHeightForAllowedValues() )
+					<tr>
+						<td headers="fsa-name">Forecast Secondary Assignee $s</td>
+						<td headers="fsa-enabled">
+							<div class="checkbox">
+								<input type="checkbox" id="enabled$key" name="enabled$key" class="checkbox" $enabled/>
+							</div>
+						</td>
+						<td headers="fsa-customized-name">
+							<input type="text" id="customName$key" name="customName$key" class="text" value="$!customName"/>
+	#if ( $errors && $errors.get("customName$key") )
+							<div class="error">$errors.get("customName$key")</div>
+	#end
+						</td>
+						<td headers="fsa-allowed-values">
+							<textarea id="allowedValuesAsString$key" name="allowedValuesAsString$key" class="textarea" rows="$textareaHeightForAllowedValues">$!allowedValuesAsString</textarea>
+	#if ( $errors && $errors.get("allowedValuesAsString$key") )
+							<div class="error">$errors.get("allowedValuesAsString$key")</div>
+	#end
+						</td>
+					</tr>
+#end
+				
+				</tbody>
+			</table>
+
+#************************************************#
+
+			<h2 class="reports__category">Secondary Date Fields ($forecastSecondaryDatesLength)</h2>
+			<table id="forecast-categories" border="0" cellpadding="0" cellspacing="0" class="aui">
+				
+				<thead>
+					<tr>
+						<th id="fsd-name">Name</th>
+						<th id="fsd-enabled">Enabled</th>
+						<th id="fsd-customized-name">Customized Name</th>
+					</tr>
+				</thead>
+				
+				<tbody>
+
+#set( $i = 0 )
+#foreach ($forecastSecondaryDate in $forecastSecondaryDates )
+	#set( $key = $action.getForecastSecondaryDateKey($i) )
+	#set( $i = $i+1 )
+	#if ( $i <= 9 )
+		#set( $s = "0" + $i )
+	#else
+		#set( $s = $i )
+	#end
+	
+	#if ( $fieldSettings.get( $key ).getEnabled() )
+		#set( $enabled = "checked='checked'" )
+	#else
+		#set( $enabled = "" )
+	#end
+	#set( $customName = $fieldSettings.get( $key ).getCustomName() )
+	#set( $allowedValuesAsString = $fieldSettings.get( $key ).getAllowedValuesAsString() )
+	#set( $textareaHeightForAllowedValues = $fieldSettings.get( $key ).getTextareaHeightForAllowedValues() )
+					<tr>
+						<td headers="fsd-name">Forecast Secondary Date $s</td>
+						<td headers="fsd-enabled">
+							<div class="checkbox">
+								<input type="checkbox" id="enabled$key" name="enabled$key" class="checkbox" $enabled/>
+							</div>
+						</td>
+						<td headers="fsd-customized-name">
+							<input type="text" id="customName$key" name="customName$key" class="text" value="$!customName"/>
+	#if ( $errors && $errors.get("customName$key") )
+							<div class="error">$errors.get("customName$key")</div>
+	#end
+						</td>
+					</tr>
+#end
+				
+				</tbody>
+			</table>
+
+#************************************************#
+
+			<div class="buttons-container">
+				<div class="buttons">
+					<input type="hidden" name="formSubmitted" value="true"/>
+					<input class="button submit" type="submit" value="Save" id="comment-save-button"/>
+					<a class="cancel" href="/plugins/servlet/project-config/$projectObject.getKey()">Cancel</a>
+				</div>
+			</div>
+
+			</form>
+
+#* if (${action.hasErrorMessages}) *#
+#end
+
+		</section><!-- .aui-page-panel-content -->
+	</div><!-- .aui-page-panel-inner -->
+</div>

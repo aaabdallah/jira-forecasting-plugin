@@ -1,0 +1,953 @@
+#disable_html_escaping()
+
+<header class="aui-page-header"><div class="aui-page-header-inner"><div class="aui-page-header-main">
+            <h1>Configure - Revenue Forecast by Calendar Month Report</h1>
+        </div></div></header>
+        
+<div class="aui-page-panel"><div class="aui-page-panel-inner">
+            <section class="aui-page-panel-content">
+
+                <form method="get" id="configure-report" class="aui" name="jiraform" action="ConfigureReport.jspa">
+                    <fieldset>
+                        
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                                
+                            
+                            
+                            <p>
+                                <b>Description:</b><br>
+                                A report to summarize forecasted revenue over a set of calendar months.
+                            </p>
+                                
+                            
+                            
+                            <fieldset>
+                            
+                                
+    <div class="field-group">
+    <fieldset class="group">
+        <legend>Project</legend>
+
+<div style="display:none;">
+<input name="projectId" id="filter_projectId_id" type="text" value="">
+</div>
+<span id="filter_projectId_name">Test</span>
+<a href="#" id="filter_projectId_button" onclick="window.open('/secure/FilterPickerPopup.jspa?showProjects=true&amp;field=projectId','filter_projectId_window', 'width=800, height=500, resizable, scrollbars=yes').focus(); return false;">
+    
+        Select Filter or Project...
+    
+    
+</a>
+
+
+
+<div class="fieldDescription">Select the project to run the report on.</div>
+	
+
+
+
+
+
+    
+    </fieldset>
+    </div>
+
+
+                            
+                                
+    <div class="field-group">
+    <fieldset class="group">
+        <legend>Starting Year</legend>
+    
+    
+    
+        
+
+
+
+
+	
+
+
+
+	
+		
+		
+			
+			
+				
+			
+		
+        
+        
+        
+		
+
+	
+	
+
+
+
+
+
+	
+
+
+
+
+    
+
+
+
+<fieldset class="hidden parameters">
+    
+        
+    
+    
+        
+    
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+    <input type="hidden" title="paramName" value="startYear">
+</fieldset>
+
+
+
+<select name="startYear" id="startYear_select">
+   
+      
+   
+   
+      
+   
+
+   
+   
+   
+       
+   
+
+   
+   
+	  <option value="2016">
+        2016
+        
+      </option>
+   
+	  <option value="2017">
+        2017
+        
+      </option>
+   
+	  <option value="2018">
+        2018
+        
+      </option>
+   
+	  <option value="2019">
+        2019
+        
+      </option>
+   
+	  <option value="2020">
+        2020
+        
+      </option>
+   
+	  <option value="2021">
+        2021
+        
+      </option>
+   
+	  <option value="2022">
+        2022
+        
+      </option>
+   
+	  <option value="2023">
+        2023
+        
+      </option>
+   
+	  <option value="2024">
+        2024
+        
+      </option>
+   
+	  <option value="2025">
+        2025
+        
+      </option>
+   
+	  <option value="2026">
+        2026
+        
+      </option>
+   
+	  <option value="2027">
+        2027
+        
+      </option>
+   
+	  <option value="2028">
+        2028
+        
+      </option>
+   
+	  <option value="2029">
+        2029
+        
+      </option>
+   
+	  <option value="2030">
+        2030
+        
+      </option>
+   
+</select>
+
+
+<span class="selectDescription" id="startYear_summary"></span>
+
+
+
+<div class="fieldDescription">Include all forecasts in or after this year (along with starting month).</div>
+	
+
+
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    </fieldset>
+    </div>
+
+
+                            
+                                
+    <div class="field-group">
+    <fieldset class="group">
+        <legend>Starting Month</legend>
+    
+    
+    
+        
+
+
+
+
+	
+
+
+
+	
+		
+		
+			
+			
+				
+			
+		
+        
+        
+        
+		
+
+	
+	
+
+
+
+
+
+	
+
+
+
+
+
+
+<fieldset class="hidden parameters">
+    
+        
+    
+    
+        
+    
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+    <input type="hidden" title="paramName" value="startMonth">
+</fieldset>
+
+
+
+<select name="startMonth" id="startMonth_select">
+   
+      
+   
+   
+      
+   
+
+   
+   
+   
+       
+   
+
+   
+   
+	  <option value="1">
+         1 - January 
+        
+      </option>
+   
+	  <option value="2">
+         2 - February 
+        
+      </option>
+   
+	  <option value="3">
+         3 - March 
+        
+      </option>
+   
+	  <option value="4">
+         4 - April 
+        
+      </option>
+   
+	  <option value="5">
+         5 - May 
+        
+      </option>
+   
+	  <option value="6">
+         6 - June 
+        
+      </option>
+   
+	  <option value="7">
+         7 - July 
+        
+      </option>
+   
+	  <option value="8">
+         8 - August 
+        
+      </option>
+   
+	  <option value="9">
+         9 - September 
+        
+      </option>
+   
+	  <option value="10">
+         10 - October 
+        
+      </option>
+   
+	  <option value="11">
+         11 - November 
+        
+      </option>
+   
+	  <option value="12">
+         12 - December 
+        
+      </option>
+   
+</select>
+
+
+<span class="selectDescription" id="startMonth_summary"></span>
+
+
+
+<div class="fieldDescription">Include all forecasts in or after this month of starting year.</div>
+	
+
+
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    </fieldset>
+    </div>
+
+
+                            
+                                
+    <div class="field-group">
+    <fieldset class="group">
+        <legend>Ending Year</legend>
+    
+    
+    
+        
+
+
+
+
+	
+
+
+
+	
+		
+		
+			
+			
+				
+			
+		
+        
+        
+        
+		
+
+	
+	
+
+
+
+
+
+	
+
+
+
+
+
+
+<fieldset class="hidden parameters">
+    
+        
+    
+    
+        
+    
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+    <input type="hidden" title="paramName" value="endYear">
+</fieldset>
+
+
+
+<select name="endYear" id="endYear_select">
+   
+      
+   
+   
+      
+   
+
+   
+   
+   
+       
+   
+
+   
+   
+	  <option value="2016">
+        2016
+        
+      </option>
+   
+	  <option value="2017" selected="">
+        2017
+        
+      </option>
+   
+	  <option value="2018">
+        2018
+        
+      </option>
+   
+	  <option value="2019">
+        2019
+        
+      </option>
+   
+	  <option value="2020">
+        2020
+        
+      </option>
+   
+	  <option value="2021">
+        2021
+        
+      </option>
+   
+	  <option value="2022">
+        2022
+        
+      </option>
+   
+	  <option value="2023">
+        2023
+        
+      </option>
+   
+	  <option value="2024">
+        2024
+        
+      </option>
+   
+	  <option value="2025">
+        2025
+        
+      </option>
+   
+	  <option value="2026">
+        2026
+        
+      </option>
+   
+	  <option value="2027">
+        2027
+        
+      </option>
+   
+	  <option value="2028">
+        2028
+        
+      </option>
+   
+	  <option value="2029">
+        2029
+        
+      </option>
+   
+	  <option value="2030">
+        2030
+        
+      </option>
+   
+</select>
+
+
+<span class="selectDescription" id="endYear_summary"></span>
+
+
+
+<div class="fieldDescription">Include all forecasts before or in this year (along with ending month).</div>
+	
+
+
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    </fieldset>
+    </div>
+
+
+                            
+                                
+    <div class="field-group">
+    <fieldset class="group">
+        <legend>Ending Month</legend>
+    
+    
+    
+        
+
+
+
+
+	
+
+
+
+	
+		
+		
+			
+			
+				
+			
+		
+        
+        
+        
+		
+
+	
+	
+
+
+
+
+
+	
+
+
+
+
+
+
+<fieldset class="hidden parameters">
+    
+        
+    
+    
+        
+    
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+        <input type="hidden" class="list" title="summaries" value="">
+    
+    <input type="hidden" title="paramName" value="endMonth">
+</fieldset>
+
+
+
+<select name="endMonth" id="endMonth_select">
+   
+      
+   
+   
+      
+   
+
+   
+   
+   
+       
+   
+
+   
+   
+	  <option value="1">
+         1 - January 
+        
+      </option>
+   
+	  <option value="2">
+         2 - February 
+        
+      </option>
+   
+	  <option value="3">
+         3 - March 
+        
+      </option>
+   
+	  <option value="4">
+         4 - April 
+        
+      </option>
+   
+	  <option value="5">
+         5 - May 
+        
+      </option>
+   
+	  <option value="6">
+         6 - June 
+        
+      </option>
+   
+	  <option value="7">
+         7 - July 
+        
+      </option>
+   
+	  <option value="8">
+         8 - August 
+        
+      </option>
+   
+	  <option value="9">
+         9 - September 
+        
+      </option>
+   
+	  <option value="10">
+         10 - October 
+        
+      </option>
+   
+	  <option value="11">
+         11 - November 
+        
+      </option>
+   
+	  <option value="12">
+         12 - December 
+        
+      </option>
+   
+</select>
+
+
+<span class="selectDescription" id="endMonth_summary"></span>
+
+
+
+<div class="fieldDescription">Include all forecasts before or in this month of ending year.</div>
+	
+
+
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    </fieldset>
+    </div>
+
+
+                            
+                                
+    <div class="field-group">
+    <fieldset class="group">
+        <legend>Last Updated Warning Threshold</legend>
+    
+        
+
+
+
+
+
+
+	
+
+
+
+	
+		
+		
+			
+			
+				
+			
+		
+        
+        
+        
+		
+
+	
+	
+
+
+
+
+
+	
+
+
+
+<input type="text" name="lastUpdatedWarningThreshold" size="40" value="30">
+
+
+
+<div class="fieldDescription">Place a warning symbol on issues last updated more than the specified number of days ago (and a lesser symbol on 75% of that value). Enter 0 to skip showing warnings.</div>
+	
+
+
+
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    </fieldset>
+    </div>
+
+
+                            
+                            
+
+
+<input type="hidden" id="selectedProjectId" name="selectedProjectId" value="10000">
+
+                            
+
+
+<input type="hidden" id="reportKey" name="reportKey" value="sa.com.ruhtlc.cloud.jira.forecasting:scscjf.report.revenueforecast.calendarmonth">
+
+                                
+                                
+                                
+                                
+                                </fieldset>
+                            <div class="buttons-container">
+                                
+                                <input class="aui-button" id="next_submit" type="submit" name="Next" value="Next">
+                                
+                                <a class="aui-button aui-button-link" id="cancelButton" href="/secure/BrowseProject.jspa?atl_token=B7E3-Z04W-BS95-TT7E%7C3a27f0d3b7d1135dbb01d9b287a910569c60bf51%7Clin" title="Cancel ( + `)">
+                                    Cancel
+                                </a>
+                            </div>
+                        </fieldset>
+                    </form>
+
+                </section><!-- .aui-page-panel-content -->
+        </div><!-- .aui-page-panel-inner --></div>

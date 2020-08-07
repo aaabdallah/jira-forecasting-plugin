@@ -1,0 +1,34 @@
+								<div class="contributionOverview">
+									<div class="contributionSummary"><span class="highlight" title="Highlight all related contributions" onclick="toggleContributionHighlight('class$forecastSummary.getForecast().getKey()'); return false;">&#9728;</span> $forecastSummary.getForecast().getSummary()</div>
+									<div class="contributionAssignee"><span title="Current Assignee">&#x1F468;</span> $!forecastSummary.getAssignee()</div>
+									<div class="contributionAmount">$decimalFormatter.format( $forecastSummary.getTotalAmount().longValue() )</div>
+									<div class="contributionDescription">$forecastSummary.getForecast().getDescription()</div>
+								</div>
+
+							#* BEGIN: Forecast details won't get displayed until user clicks *#
+							<div id="id$forecastSummary.getForecast().getKey()" class="w3-modal">
+								<div class="w3-modal-content w3-card-8">
+									<div class="w3-container w3-teal contributionDetailsHeader">
+										<p onclick="document.getElementById('id$forecastSummary.getForecast().getKey()').style.display='none'" class="w3-closebtn">&times;</p>
+										<p>$!forecastSummary.getForecast().getSummary()</p>
+									</div>
+									<div class="w3-container w3-text-black contributionDetails">
+										<p style="display:none"></p> #* solves annoying margin setting by JIRA of first p element *#
+										<p style="float:right"><a href="/browse/$forecastSummary.getForecast().getKey()" title="Edit...">&#9998;</a></p>
+										<table><tbody>
+											<colgroup><col/><col/></colgroup>
+											<tr><td class="detailName">Date:</td><td>$yearMonthDayFormatter.format( $forecastSummary.getForecastDateToUse( $forecastDateToUse ) )</td></tr>
+											<tr><td class="detailName">Category:</td><td>$!forecastSummary.getCategory()</td></tr>
+											<tr><td class="detailName">Reporter:</td><td>$!forecastSummary.getReporter()</td></tr>
+											<tr><td class="detailName">Assignee:</td><td>$!forecastSummary.getAssignee()</td></tr>
+											<tr><td class="detailName">Total Revenue:</td><td>$decimalFormatter.format( $forecastSummary.getTotalAmount().longValue() )</td></tr> 
+											<tr><td class="detailName">Description:</td><td>$!forecastSummary.getForecast().getDescription()</td></tr>
+										</tbody></table>
+									</div>
+									<div class="w3-container w3-teal">
+										<p style="text-align:right">Last Updated: $forecastSummary.getLastUpdatedInDaysAgo() days ago</p>
+									</div>
+								</div>
+							</div>
+							#* END: Forecast details won't get displayed until user clicks *#
+								

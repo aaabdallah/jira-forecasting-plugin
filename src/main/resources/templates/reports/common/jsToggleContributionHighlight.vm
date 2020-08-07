@@ -1,0 +1,24 @@
+<script>
+function toggleContributionHighlight(contributionClassName)
+{
+	var contributions = document.getElementsByClassName(contributionClassName);
+
+	var i;
+	var originalColorClass;
+	for(i=0; i<contributions.length; i++)
+	{
+		originalColorClass = contributions[i].getAttribute('data-originalColorClass');
+		if ( !originalColorClass )
+		{
+#foreach( $cardColorClass in $cardColorClasses )
+			if ( contributions[i].classList.contains('$cardColorClass') )
+				originalColorClass = '$cardColorClass';
+#end
+			contributions[i].setAttribute('data-originalColorClass', originalColorClass);
+		}
+
+		contributions[i].classList.toggle(originalColorClass);
+		contributions[i].classList.toggle('w3-black');
+	}
+}
+</script>

@@ -1,0 +1,190 @@
+$webResourceManager.requireResourcesForContext("sa.com.ruhtlc.cloud.jira.forecasting")
+
+<link href="/download/resources/sa.com.ruhtlc.cloud.jira.forecasting:forecasting-resources/forecasting.css" rel="stylesheet"/>
+<link href="/download/resources/sa.com.ruhtlc.cloud.jira.forecasting:forecasting-resources/w3-modified.css" rel="stylesheet"/>
+
+#set( $monthAbbreviations = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] )
+##set( $cardColorClasses = ["w3-aqua", "w3-sand"] )
+#set( $cardColorClasses = ["w3-sand", "w3-sand"] )
+
+<table class="reportHeader">
+<colgroup>
+	<col style="width=25%"/>
+	<col style="width=50%"/>
+	<col style="width=25%"/>
+</colgroup>
+<tbody>
+	<tr>
+		<td style="text-align:left">Report Period: $yearMonthDayFormatter.format($reportStartingFiscalWeek.getStartingDate()) - $yearMonthDayFormatter.format($reportEndingFiscalWeek.getEndingDate())</td>
+		<td style="text-align:center">Forecasts Source: <a href="$forecastsSourceURL" target="_blank">$forecastsSourceName</a></td>
+		<td style="text-align:right">&nbsp;</td>
+	</tr>
+	<tr>
+		<td style="text-align:left">Forecast Date Used: $forecastDateToUse</td>
+		<td style="text-align:center">Included Forecasts: $validForecastsCount</td>
+		<td style="text-align:right">&nbsp;</td>
+	</tr>
+</tbody>
+</table>
+
+#if ( ! $validForecastsCount || $validForecastsCount == 0 )
+<div class="aui-message aui-message-info">
+	<p class="title">
+		<strong>No matching forecasts</strong>
+	</p>
+	<p>No forecasts were found that match the report's input parameters.</p>
+
+	#stop
+	
+#end
+ 
+#include( "/templates/reports/schedule-forecast/jsToggleDetails.vm" )
+
+#set( $currentYear = 0 )
+#set( $currentQuarter = 0 )
+#set( $currentMonth = 0 )
+#set( $darkRow = 0 )
+
+## Iterate through all weeks
+#foreach ($reportWeekStart in $forecastSummaries.keySet() )
+	
+	#if ( ! $currentYear.equals( $reportWeekStart.getFiscalYear() ) )
+		## Close previous year's table (if any)
+		#if ( $currentYear != 0 )
+</tbody></table>
+		#end
+
+		## Start new table for new year
+		#set( $currentYear = $reportWeekStart.getFiscalYear() )
+
+<p class="yearHeader">Fiscal Year: $currentYear&nbsp;&nbsp;<span class="w3-btn w3-white w3-tiny w3-round-large w3-border w3-border-red reportButton" title="Hide/show empty week rows" onclick="toggleEmptyWeekRows(); return false;"><i>Collapse</i></span></p>
+<table class="yearTable">
+<colgroup>
+	<col style="width:10em"/>
+		#foreach ( $forecastDomain in $forecastDomains )
+	<col class="domainColumn"/>
+		#end
+	<col style="width:1em"/>
+</colgroup>
+<tbody>
+		## Row to show the column headings 
+
+	<tr class="lightRow headerRow">
+		<td class="weekHeader">Week</td>
+		#foreach ( $forecastDomain in $forecastDomains )
+		<td style="text-align:center">$forecastDomain</td>
+		#end
+	</tr>
+
+		## Ensure quarter's weeks start with dark
+		#set( $darkRow = 0 )
+	#end
+
+	## Use the quarters to display the weeks in alternate colors by quarter
+	#if ( ! $currentQuarter.equals( $reportWeekStart.getFiscalQuarter() ) )
+		#set( $currentQuarter = $reportWeekStart.getFiscalQuarter() )
+		#set( $darkRow = $darkRow + 1 )
+	#end
+
+	## Use the months to place thicker borders during month transitions
+	#if ( ! $currentMonth.equals( $reportWeekStart.getFiscalMonthOfQuarter() ) )
+		#set( $currentMonth = $reportWeekStart.getFiscalMonthOfQuarter() )
+		#set( $emphasizedTopBorder = "emphasizedTopBorder" )
+	#else
+		#set( $emphasizedTopBorder = "regularTopBorder" )
+	#end
+
+	## Put a new row for this week
+	<tr id="weekRow${reportWeekStart.getYear()}${reportWeekStart.getFiscalWeekOfYear()}" class="weekRow $emphasizedTopBorder">
+
+	#set( $monthAbbreviation = $reportWeekStart.getMonth() - 1 )
+	#set( $monthAbbreviation = $monthAbbreviations.get( $monthAbbreviation ) )
+
+	#if ( $darkRow % 2 == 1 )
+		<td class="darkRow week">
+	#else
+		<td class="lightRow week">
+	#end
+	##		<div style="font-weight:bold">$reportWeekStart.getFiscalWeekOfYear(): $reportWeekStart.getDayOfMonth()-$reportWeekStart.getMonth()-$reportWeekStart.getYear()</div>
+			<div style="font-weight:bold">$reportWeekStart.getFiscalWeekOfYear(): $yearMonthDayFormatter.format( $reportWeekStart.getStartingDate() )</div>
+			<div><span class="quarterHighlight">Q$reportWeekStart.getFiscalQuarter()</span> <span class="monthHighlight">M$reportWeekStart.getFiscalMonthOfQuarter()</span> <span class="weekHighlight">W$reportWeekStart.getFiscalWeekOfMonth()</span></div>
+		</td>
+
+	#set( $cardColor = 0 )
+	#set( $domainCounter = 0 )
+	#foreach ( $forecastDomain in $forecastDomains )
+		<td style="vertical-align : top;">
+
+		#if ( !$forecastSummaries.get($reportWeekStart).isEmpty() )
+				<table class="contributionTable forecastSummaryClass${reportWeekStart.getYear()}${reportWeekStart.getFiscalWeekOfYear()}">
+				<colgroup>
+					<col/>
+				</colgroup>
+				<tbody>
+
+			#foreach ($forecastSummary in $forecastSummaries.get($reportWeekStart))
+				#if ( $forecastSummary.getCategory().equals( $forecastDomain ) )
+					<tr>
+						<td>
+
+							<div class="w3-container w3-pale-blue w3-leftbar w3-border-blue w3-hover-aqua forecast-card class$forecastSummary.getForecast().getKey()">
+					##if( $cardColor%2 == 0 )
+					##		<div class="w3-container $cardColorClasses.get(0) w3-border w3-border-deep-orange w3-hover-black w3-hover-border-black w3-hover-text-white w3-round-large forecast-card class$forecastSummary.getForecast().getKey()" >
+					##else
+					##		<div class="w3-container $cardColorClasses.get(1) w3-border w3-border-deep-orange w3-hover-black w3-hover-border-black w3-hover-text-white w3-round-large forecast-card class$forecastSummary.getForecast().getKey()" >
+					##end
+
+					## parse( "/templates/reports/schedule-forecast/htmlForecastSummaryCard.vm" )
+
+								<div class="contributionOverview">
+									<div class="contributionInfo contributionLink"><a href="/browse/$forecastSummary.getForecast().getKey()" target="_blank" title="Edit...">&#9998;</a></div>
+									<div class="contributionInfo">&nbsp;</div>
+									<div class="contributionInfo contributionLink" title="More information..." onclick="toggleDetails('cardDetailsId$forecastSummary.getForecast().getKey()'); return false;">&#10067;</div>
+									<div><span class="ofLabel">Summary:</span> $forecastSummary.getForecast().getSummary()</div>
+									<div title="Last updated (days)" class="contributionInfo lastUpdatedWarning
+					#if ( $lastUpdatedWarningThreshold > 0 && $forecastSummary.getLastUpdatedInDaysAgo() > $lastUpdatedWarningThreshold ) w3-red 
+					#elseif ( $lastUpdatedWarningThreshold > 0 && $forecastSummary.getLastUpdatedInDaysAgo() > ($lastUpdatedWarningThreshold*0.75) ) w3-amber 
+					#else
+					#end
+									">LU: $forecastSummary.getLastUpdatedInDaysAgo()</div>
+									<div><span class="ofLabel">Status:</span> $forecastSummary.getForecastStatus()</div>
+									<div><span class="ofLabel">Assignee:</span> $!forecastSummary.getAssignee()</div>
+									<div><span class="ofLabel">$forecastDateToUse:</span> $yearMonthDayFormatter.format( $forecastSummary.getForecastDateToUse( $forecastDateToUse ) )</div>
+		
+									<div id="cardDetailsId$forecastSummary.getForecast().getKey()" style="display:none;">
+					#if ( $forecastSummary.getForecast().getParentObject() )
+										<div><span class="ofLabel">Parent Issue:</span> <a href="/browse/$forecastSummary.getForecast().getParentObject().getKey()" target="_blank" title="Edit Parent...">$forecastSummary.getForecast().getParentObject().getSummary()</a></div>
+					#end
+										<div><span class="ofLabel">Category:</span> $forecastSummary.getCategory()</div>
+										<div><span class="ofLabel">Total Revenue:</span> $decimalFormatter.format( $forecastSummary.getTotalAmount().longValue() )</div>
+										<div><span class="ofLabel">Description:</span> $forecastSummary.getFormattedDescription()</div>
+									</div>
+								</div>
+					
+							</div>
+
+						</td>
+					</tr>
+				#end
+			#end
+				</tbody>
+				</table>
+
+		#else
+				&nbsp;
+		#end
+
+		</td>
+		
+		#set( $cardColor = $cardColor + 1 )
+		#set( $domainCounter = $domainCounter + 1 )
+	#end
+
+	## End the row for this week
+	</tr>
+
+#end
+
+## Close the last table
+</tbody></table>
+

@@ -1,0 +1,44 @@
+#disable_html_escaping()
+
+#* Script necessary because web-panels come with a fixed sidebar-page-container *#
+
+<script>
+var webPanelContainerForPage = document.getElementById("sidebar-page-container");
+
+if (webPanelContainerForPage)
+{
+	webPanelContainerForPage.classList.add("contains-header");
+}
+</script>
+
+<header class="aui-page-header aui-page-header-fixed header-with-border">
+	<div class="aui-page-header-inner">
+		<div class="aui-page-header-main">
+		<h1>Forecasts</h1>
+		</div>
+	</div>
+</header>
+
+<section class="aui-page-panel-content aui-page-panel-content-no-table">
+
+<h2 class="reports__category">Reports</h2>
+<ul class="reports__list" data-category-key="other">
+	<li class="reports__list__item">
+		<a href="/secure/ConfigureReport!default.jspa?selectedProjectId=10000&amp;projectOrFilterId=project-10000&amp;projectOrFilterName=Test&amp;reportKey=sa.com.ruhtlc.cloud.jira.forecasting:scscjf.report.revenueforecast.calendarmonth" class="reports__list__report default-thumbnail" data-report-key="sa.com.ruhtlc.cloud.jira.forecasting:scscjf.report.revenueforecast.calendarmonth">Revenue Forecast by Calendar Month Report</a>
+		<p>A report to summarize forecasted revenue over a set of calendar months.</p>
+	</li>
+	<li class="reports__list__item">
+		<a href="/secure/ConfigureReport!default.jspa?selectedProjectId=10000&amp;projectOrFilterId=project-10000&amp;projectOrFilterName=Test&amp;reportKey=sa.com.ruhtlc.cloud.jira.forecasting:scscjf.report.revenueforecast.fiscalweek" class="reports__list__report default-thumbnail" data-report-key="sa.com.ruhtlc.cloud.jira.forecasting:scscjf.report.revenueforecast.fiscalweek">Revenue Forecast by Fiscal Week Report</a>
+		<p>A report to summarize forecasted revenue over a set of fiscal weeks.</p>
+	</li>
+</ul>
+
+<h2 class="reports__category">Graphs &amp; Reports</h2>
+<ul class="reports__list" data-category-key="other">
+	<li class="reports__list__item">
+		<a href="/secure/revenueforecastbycalendarmonth!default.jspa" class="reports__list__report default-thumbnail">Revenue Forecast by Calendar Month Report</a>
+		<p>A report to summarize forecasted revenue over a set of calendar months.</p>
+	</li>
+</ul>
+
+</section>

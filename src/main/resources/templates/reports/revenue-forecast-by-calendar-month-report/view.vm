@@ -1,0 +1,152 @@
+<link href="/download/resources/sa.com.ruhtlc.cloud.jira.forecasting:scscjf.report.revenueforecast.calendarmonth/forecasting.css" rel="stylesheet"/>
+<link href="/download/resources/sa.com.ruhtlc.cloud.jira.forecasting:scscjf.report.revenueforecast.calendarmonth/w3-modified.css" rel="stylesheet"/>
+
+#set( $monthAbbreviations = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] )
+#set( $cardColorClasses = ["w3-aqua", "w3-sand"] )
+
+#parse( "/templates/reports/common/jsToggleContributionHighlight.vm" )
+
+<table class="reportHeader">
+<colgroup>
+	<col style="width=25%"/>
+	<col style="width=50%"/>
+	<col style="width=25%"/>
+</colgroup>
+<tbody>
+	<tr>
+		<td style="text-align:left">Project Name: $selectedProjectName</td>
+		<td style="text-align:center">Report Period: $yearMonthDayFormatter.format($reportStartingDate) - $yearMonthDayFormatter.format($reportEndingDate)</td>
+		<td style="text-align:right">Contributing Forecasts: $forecastCount</td>
+	</tr>
+	<tr>
+		<td style="text-align:left">&nbsp;</td>
+		<td style="text-align:center">Total Revenue: $decimalFormatter.format( $totalForecastContributionsWithinReport.longValue() )</td>
+		<td style="text-align:right">&nbsp;</td>
+	</tr>
+</tbody>
+</table>
+
+#set( $currentYear = 0 )
+#set( $yearTotal = 0 )
+#set( $darkRow = 1 )
+
+#foreach ($reportMonthStart in $forecastContributions.keySet() )
+	
+	#set( $reportMonthYear = $reportMonthStart.getYear() + 1900 )
+	#if ( ! $currentYear.equals( $reportMonthYear ) )
+		## Close previous year's table (if any)
+		#if ( $currentYear != 0 )
+</tbody></table>
+<p class="yearTotal">$decimalFormatter.format( $yearTotal.longValue() )</p>
+		#end
+
+		## Start new table for new year
+		#set( $currentYear = $reportMonthYear )
+		#set( $yearTotal = 0 )
+
+<p class="yearHeader">Fiscal Year: $currentYear</p>
+<table class="yearTable">
+<colgroup>
+	<col style="width:8em"/>
+		#foreach ( $forecastDomain in $forecastDomains )
+	<col class="domainColumn"/>
+		#end
+	<col style="width:1em"/>
+</colgroup>
+<tbody>
+		## Row to show the column headings 
+
+	<tr class="lightRow headerRow">
+		<td class="weekHeader">Month</td>
+		#foreach ( $forecastDomain in $forecastDomains )
+		<td style="text-align:center">$forecastDomain</td>
+		#end
+		<td class="monthTotal">Total</td>
+	</tr>
+
+		## Ensure table's rows are consistently shaded (starting dark)
+		#set( $darkRow = 1 )
+	#end
+		
+	## Group of rows, one for each week
+	#if ( $darkRow%2 == 1 )
+	<tr class="darkRow">
+	#else
+	<tr class="lightRow">
+	#end
+
+	#set( $darkRow = $darkRow + 1 )
+	#set( $monthTotal = 0 )
+	#set( $monthAbbreviation = $reportMonthStart.getMonth() )
+	#set( $monthAbbreviation = $monthAbbreviations.get( $monthAbbreviation ) )
+
+		<td class="week">
+			<div>$yearMonthDayFormatter.format( $reportMonthStart )</div>
+		</td>
+
+	#set( $cardColor = 0 )
+	
+	#foreach ( $forecastDomain in $forecastDomains )
+		<td style="vertical-align : top;">
+
+		#if ( !$forecastContributions.get($reportMonthStart).isEmpty() )
+				<table class="contributionTable">
+				<colgroup>
+					<col/>
+				</colgroup>
+				<tbody>
+
+			#foreach ($forecastContribution in $forecastContributions.get($reportMonthStart))
+				#if ( $forecastContribution.getDomain().equals( $forecastDomain ) )
+					#set( $monthTotal = $monthTotal + $forecastContribution.getAmount() )
+					#set( $yearTotal = $yearTotal + $forecastContribution.getAmount() )
+					<tr>
+						<td>
+
+					#parse( "/templates/reports/common/htmlForecastDetailsCard.vm" )
+						
+					#if( $cardColor%2 == 0 )
+							<div class="w3-container $cardColorClasses.get(0) w3-border w3-border-indigo w3-hover-black w3-hover-border-black w3-hover-text-white w3-round-large forecast-card class$forecastContribution.getForecast().getKey()" >
+					#else
+							<div class="w3-container $cardColorClasses.get(1) w3-border w3-border-deep-orange w3-hover-black w3-hover-border-black w3-hover-text-white w3-round-large forecast-card class$forecastContribution.getForecast().getKey()" >
+					#end
+					
+					#parse( "/templates/reports/common/htmlForecastOverviewCard.vm" )
+
+								<div class="contributionExtras">
+									<div class="contributionLinks"><span title="More information..." onclick="document.getElementById('id$forecastContribution.getForecast().getKey()').style.display='block'; return false;">&#10067;</span> <a href="/browse/$forecastContribution.getForecast().getKey()" title="Edit...">&#9998;</a></div>
+									<div title="Last updated (days)" class="lastUpdatedWarning
+					#if ( $lastUpdatedWarningThreshold > 0 && $forecastContribution.getLastUpdatedInDaysAgo() > $lastUpdatedWarningThreshold ) w3-red 
+					#elseif ( $lastUpdatedWarningThreshold > 0 && $forecastContribution.getLastUpdatedInDaysAgo() > ($lastUpdatedWarningThreshold*0.75) ) w3-amber 
+					#else
+					#end
+									">LU: $forecastContribution.getLastUpdatedInDaysAgo()</div>
+								</div>
+							</div>
+
+						</td>
+					</tr>
+				#end
+			#end
+				</tbody>
+				</table>
+
+		#else
+				&nbsp;
+		#end
+
+		</td>
+		
+		#set( $cardColor = $cardColor + 1 )
+	#end
+
+		<td class="monthTotal">$decimalFormatter.format( $monthTotal.longValue() )</td>
+	</tr>
+
+#end
+
+## Close the last table
+</tbody></table>
+<p class="yearTotal">$decimalFormatter.format( $yearTotal.longValue() )</p>
+
+

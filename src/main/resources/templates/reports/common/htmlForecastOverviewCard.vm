@@ -1,0 +1,5 @@
+								<div class="contributionOverview">
+									<div class="contributionSummary"><span class="highlight" title="Highlight all related contributions" onclick="toggleContributionHighlight('class$forecastContribution.getForecast().getKey()'); return false;">&#9728;</span> $forecastContribution.getForecast().getSummary()</div>
+									<div class="contributionAssignee"><span title="Current Assignee">&#x1F468;</span> $!forecastContribution.getAssignee()</div>
+									<div class="contributionAmount">$decimalFormatter.format( $forecastContribution.getAmount().longValue() ) <span title="Accumulated amount considering contributions in this report only">($decimalFormatter.format( $forecastContribution.getAccumulatedAmount().longValue() ))</span></div>
+								</div>

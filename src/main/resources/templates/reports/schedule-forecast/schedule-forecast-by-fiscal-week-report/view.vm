@@ -1,0 +1,725 @@
+$webResourceManager.requireResourcesForContext("sa.com.ruhtlc.cloud.jira.forecasting")
+
+## avoids the Velocity escaping junk.
+#set( $ajsJquery = "AJS.$" )
+
+<table class="reportHeader w3-light-grey">
+<tbody>
+	<tr>
+		<td>Report Period: $MMMddyyyyFormatter.format($reportStartingFiscalWeek.getStartingDate()) - $MMMddyyyyFormatter.format($reportEndingFiscalWeek.getEndingDate())</td>
+		<td>Forecasts Source: <a href="$forecastsSourceURL" target="_blank">$forecastsSourceName</a></td>
+	</tr>
+	<tr>
+		<td>Forecast Date Used: $forecastDateToUse</td>
+		<td>Included Forecasts: $validForecastsCount</td>
+	</tr>
+</tbody>
+</table>
+
+#if ( ! $validForecastsCount || $validForecastsCount == 0 )
+<div class="aui-message aui-message-info">
+	<p class="title">
+		<strong>No matching forecasts</strong>
+	</p>
+	<p>No forecasts were found that match the report's input parameters.</p>
+
+	#stop
+	
+#end
+
+## BEGIN ########################################
+
+<button id="reportControlsBar" class="aui-button" onclick="this.nextElementSibling.classList.toggle('showPanel'); return false;">Report Filters &#9660;</button>
+<div class="reportControlsPanel showPanel">
+
+	<div>
+	<input type="checkbox" onclick="toggleEmptyWeeks()">Show Empty Weeks</input>
+	<input type="checkbox" checked="checked" onclick="toggleConstrainGridDisplay()">Limit Calendar to Window Width</input>
+	</div>
+
+	<div>
+	<input name="timePeriod" type="radio" onclick="showForecastsPerWeek()" checked="checked">Forecasts per Week</input>
+	<input name="timePeriod" type="radio" onclick="showForecastsPerMonth()">Forecasts per Month</input>
+	<input name="timePeriod" type="radio" onclick="showForecastsPerQuarter()">Forecasts per Quarter</input>
+	</div>
+
+	<hr/>
+
+	<div class="reportControlsPanelCharts">
+		<div id="chart_forecastsByCompletionStatus" class="dcchart">
+			<strong>Done?</strong> <a href="javascript:void(0)" onclick="_fp_showExplainDoneDialog();" style="font-size:75%">Help</a>
+			<div class="reset" style="visibility: hidden;">
+				<button class="w3-btn w3-black w3-round-large w3-tiny dashboardButton" onclick="javascript:chart_forecastsByCompletionStatus.filterAll();dc.redrawAll();">RESET</button>
+				<span class="selectedfilters filter"></span>
+			</div>
+		</div>
+		<div id="chart_forecastsByForecastCategory" class="dcchart">
+			<strong>Categories</strong>
+			<div class="reset" style="visibility: hidden;">
+				<button class="w3-btn w3-black w3-round-large w3-tiny dashboardButton" onclick="javascript:chart_forecastsByForecastCategory.filterAll();dc.redrawAll();">RESET</button>
+				<span class="selectedfilters filter"></span>
+			</div>
+		</div>
+		<div id="chart_forecastsByAssignee" class="dcchart">
+			<strong>Assignees</strong>
+			<div class="reset" style="visibility: hidden;">
+				<button class="w3-btn w3-black w3-round-large w3-tiny dashboardButton" onclick="javascript:chart_forecastsByAssignee.filterAll();dc.redrawAll();">RESET</button>
+				<span class="selectedfilters filter"></span>
+			</div>
+		</div>
+		<div id="chart_forecastsByStatus" class="dcchart">
+			<strong>Status</strong>
+			<div class="reset" style="visibility: hidden;">
+				<button class="w3-btn w3-black w3-round-large w3-tiny dashboardButton" onclick="javascript:chart_forecastsByStatus.filterAll();dc.redrawAll();">RESET</button>
+				<span class="selectedfilters filter"></span>
+			</div>
+		</div>
+	</div>
+
+	<div style="text-align:center">
+		<button class="w3-btn w3-black w3-round-large w3-tiny dashboardButton" style="margin-left:1em" onclick="javascript:dc.filterAll(); dc.redrawAll();">RESET ALL</button>
+	</div>
+</div>
+
+
+<div id="reportContainer" style="clear:both">	
+
+	<div id="grid_forecastsByPeriodContainer">
+		<!-- <div id="controls">
+			<div id="c1hdr" class="Section">Control 1</div>
+			<div id="c1pan">Panel 1</div>
+			<div id="c2hdr">Control 2</div>
+			<div id="c2pan">Panel 2</div>
+		</div> -->
+
+		<div id="grid_forecastsByPeriod" class="dcchart" style="">
+		</div>
+	</div>
+
+</div> <!-- reportContainer -->
+
+<script>
+var json_forecastSummaries = $jsonForecastSummariesWithHtml;
+var lastUpdatedWarningThreshold = $lastUpdatedWarningThreshold;
+var forecastDateToUse = "$forecastDateToUse";
+var reportCurrentFiscalYear = $reportCurrentFiscalYear;
+var reportCurrentFiscalWeekOfYear = $reportCurrentFiscalWeekOfYear;
+var reportCurrentFiscalMonthOfYear = $reportCurrentFiscalMonthOfYear;
+var reportCurrentFiscalQuarter = $reportCurrentFiscalQuarter;
+
+var ignore = "IGNORE";
+var crossfilter_forecasts;
+
+var grid_forecastsByPeriod = dc.dataGrid("#grid_forecastsByPeriod");
+var chart_forecastsByForecastCategory = dc.barChart("#chart_forecastsByForecastCategory");
+var chart_forecastsByAssignee = dc.barChart("#chart_forecastsByAssignee");
+var chart_forecastsByStatus = dc.barChart("#chart_forecastsByStatus");
+var chart_forecastsByCompletionStatus = dc.pieChart("#chart_forecastsByCompletionStatus");
+
+var dimension_byID;
+var dimension_byForecastCategory;
+var dimension_byAssignee;
+var dimension_byYearMonthWeek;
+var dimension_byYearMonth;
+var dimension_byYearQuarter;
+var dimension_byStatus;
+var dimension_byCompletionStatus;
+
+var function_commaFormat = d3.format(",");
+
+var showingEmptyWeeks = false;
+var constrainingGridToWindowWidth = true;
+
+function zeroPad(number)
+{
+	if (number > 9)
+		return number.toString();
+	else
+		return "0".concat( number.toString() );
+}
+
+// **************************************************************
+function yearMonthWeekAccessor(d)
+{
+	return 'Y' + d["Fiscal Year"] + " M" + zeroPad( d["Fiscal Month of Year"] ) + " W" + zeroPad( d["Fiscal Week of Month"]);
+}
+function yearMonthAccessor(d)
+{
+	return 'Y' + d["Fiscal Year"] + " M" + zeroPad( d["Fiscal Month of Year"] );
+}
+function yearQuarterAccessor(d)
+{
+	return 'Y' + d["Fiscal Year"] + " Q" + zeroPad( d["Fiscal Quarter"] );
+}
+function forecastCategoryAccessor(d)
+{
+	if (d === undefined || d["Forecast Category"] === undefined)
+		return ignore;
+	return d["Forecast Category"];
+}
+function assigneeAccessor(d)
+{
+	if (d === undefined || d["Assignee"] === undefined)
+		return ignore;
+	return d["Assignee"];
+}
+function statusAccessor(d)
+{
+	if (d === undefined || d["Status"] === undefined)
+		return ignore;
+	return d["Status"];
+}
+function completionStatusAccessor(d)
+{
+	if (d === undefined || d["Completion Status"] === undefined)
+		return ignore;
+	return d["Completion Status"];
+}
+
+function isInThePast(d)
+{
+	if (reportCurrentFiscalYear > d["Fiscal Year"] 
+		|| (reportCurrentFiscalYear == d["Fiscal Year"] && reportCurrentFiscalWeekOfYear > d["Fiscal Week of Year"]))
+		return true;
+	return false;
+}
+
+// **************************************************************
+function htmlForOneForecast(d)
+{
+	if (d["ID"] == "none")
+		return "<div class='hidden-grid-item'/>";
+	
+	var forecastHtml = "";
+
+	if (d["Completion Status"] == "Done") // START div 1000
+		forecastHtml =
+			'<div id="fccdtb' + d["ID"] + '" class="w3-container w3-black w3-border-black forecastCardTab" style="width:5em">DONE</div>' 
+			+ '<div id="' + d["ID"] + '" class="w3-container w3-highway-green w3-border w3-leftbar w3-border-teal w3-hover-pale-green forecastCard">';
+	else if (d["Completion Status"] == "Delayed")
+		forecastHtml = 
+			'<div id="fccdtb' + d["ID"] + '" class="w3-container w3-black w3-border-black forecastCardTab" style="width:8em">DELAYED</div>' 
+			+ '<div id="' + d["ID"] + '" class="w3-container w3-highway-red w3-border w3-leftbar w3-border-red w3-hover-pale-red forecastCard">';
+	else if (d["Completion Status"] == "Postponed")
+		forecastHtml = 
+			'<div id="fccdtb' + d["ID"] + '" class="w3-container w3-black w3-border-black forecastCardTab" style="width:9em">POSTPONED</div>' 
+			+ '<div id="' + d["ID"] + '" class="w3-container w3-highway-orange w3-border w3-leftbar w3-border-red w3-hover-pale-yellow forecastCard">';
+	else
+		forecastHtml = 
+			'<div id="fccdtb' + d["ID"] + '"class="w3-container w3-black w3-border-black forecastCardTab" style="width:11em">ON SCHEDULE</div>'
+			+ '<div id="' + d["ID"] + '" class="w3-container w3-highway-blue w3-border w3-leftbar w3-border-blue w3-hover-pale-blue forecastCard">';
+
+	forecastHtml = forecastHtml
+		+ '<div><div class="rightWidget forecastCardLink"><a href="/browse/' + d["ID"] + '" target="_blank" title="Edit...">&#9998;</a></div><span class="ofLabel">Summary:</span> ' + d["Summary"] + '</div>'
+		+ '<div><div title="Last updated ' + d["Last Updated"] + ' days ago by ' + d["Last Updated By"] + '" class="rightWidget lastUpdatedWarning ' 
+			+ ((lastUpdatedWarningThreshold > 0 && d["Last Updated"] > lastUpdatedWarningThreshold) ? "w3-red" 
+				: ((lastUpdatedWarningThreshold > 0 && d["Last Updated"] > 0.75*lastUpdatedWarningThreshold) ? "w3-amber" : "w3-light-green"))
+			+ '">LU: ' + d["Last Updated"] + '</div><span class="ofLabel">Status:</span> ' + d["Status"] + '</div>'
+		+ '<div><span class="ofLabel">Assignee:</span> ' + d["Assignee"] + '</div>'
+		+ (d["Total Value"] > 0 ? ('<div><span class="ofLabel">Total Value:</span> ' + function_commaFormat( d["Total Value"] ) + '</div>') : "")
+		+ '<div><span class="ofLabel" title="The last accepted date or the original date if unreviewed">Accepted ' + forecastDateToUse + ':</span> <span id="lstrvdtu' + d["ID"] + '">' + d["Last Reviewed " + forecastDateToUse] + '</span></div>'
+
+		+
+		(d["Current " + forecastDateToUse] == d["Last Reviewed " + forecastDateToUse] 
+			? "" 
+			: ('<div><span class="ofLabel">Proposed ' + forecastDateToUse + ':</span> <span id="propdtu' + d["ID"] + '">' + d["Current " + forecastDateToUse] + '</span>'
+				+ '<div class="rightWidget forecastCardLink"><a id="rvdldtcmd' + d["ID"] + '" href="javascript:void(0)" onclick="_fp_requestReview(' + "'" + d["ID"] + "'" + ');" title="Accept">&#10004;</a></div>' + '</div>')
+		);
+
+	var i = 0;
+	if ( d["Outward Links"] )
+	{
+		forecastHtml = forecastHtml + '<div style="width:100%; text-align:center">&#9552; &#9552; &#9552;</div>';
+		while (i < d["Outward Links"].length)
+		{
+			forecastHtml = forecastHtml
+				+ '<div><div class="rightWidget forecastCardLink"><a href="/browse/' + d["Outward Links"][i]["ID"] + '" target="_blank" title="Edit...">&#9998;</a></div><span class="ofLabel">Refers To:</span> ' + d["Outward Links"][i]["Summary"] + '</div>'
+			i++;
+		}
+	} 
+	i = 0;
+	if ( d["Inward Links"] )
+	{
+		forecastHtml = forecastHtml + '<div style="width:100%; text-align:center">&#9552; &#9552; &#9552;</div>';
+		while (i < d["Inward Links"].length)
+		{
+			forecastHtml = forecastHtml
+				+ '<div><div class="rightWidget forecastCardLink"><a href="/browse/' + d["Inward Links"][i]["ID"] + '" target="_blank" title="Edit...">&#9998;</a></div><span class="ofLabel">Referred By:</span> ' + d["Inward Links"][i]["Summary"] + '</div>'
+			i++;
+		}
+	} 
+
+	forecastHtml += "</div>"; // END div 1000
+	return forecastHtml;
+}
+
+function htmlForYearMonthWeekHeader(d) // d is group-based key plus all records under that key as values
+{
+	var isCurrent = (reportCurrentFiscalYear == d.values[0]["Fiscal Year"] && reportCurrentFiscalWeekOfYear == d.values[0]["Fiscal Week of Year"]) ? "isCurrent" : "";
+	return "<div class='grid-header " + isCurrent + "'>" + d.values[0]["Fiscal Week"] + "<br/>"
+		+ '<span title="Week of Fiscal Year" class="weekofyearHighlight">WY' + d.values[0]["Fiscal Week of Year"] 
+		+ ':</span> <span title="Fiscal Quarter" class="quarterHighlight">Q' + d.values[0]["Fiscal Quarter"] 
+		+ '</span> <span title="Month of Quarter" class="monthHighlight">M' + d.values[0]["Fiscal Month of Quarter"] 
+		+ '</span> <span title="Week of Month" class="weekHighlight">W' + d.values[0]["Fiscal Week of Month"] + '</span>'
+		+ "</div>";
+}
+
+function htmlForYearMonthHeader(d) // d is group-based key plus all records under that key as values
+{
+	var isCurrent = (reportCurrentFiscalYear == d.values[0]["Fiscal Year"] && reportCurrentFiscalMonthOfYear == d.values[0]["Fiscal Month of Year"]) ? "isCurrent" : "";
+	return "<div class='grid-header " + isCurrent + "'>M" + d.values[0]["Fiscal Month of Year"] + " / " + d.values[0]["Fiscal Year"] + "</div>";
+}
+
+function htmlForYearQuarterHeader(d) // d is group-based key plus all records under that key as values
+{
+	var isCurrent = (reportCurrentFiscalYear == d.values[0]["Fiscal Year"] && reportCurrentFiscalQuarter == d.values[0]["Fiscal Quarter"]) ? "isCurrent" : "";
+	return "<div class='grid-header " + isCurrent + "'>Q" + d.values[0]["Fiscal Quarter"] + " / " + d.values[0]["Fiscal Year"] + "</div>";
+}
+
+function showForecastsPerWeek()
+{
+	grid_forecastsByPeriod
+		.htmlGroup( htmlForYearMonthWeekHeader ) 
+		.dimension(dimension_byYearMonthWeek)
+		.group( yearMonthWeekAccessor );
+		
+	dc.redrawAll();
+}
+
+function showForecastsPerMonth()
+{
+	grid_forecastsByPeriod
+		.htmlGroup( htmlForYearMonthHeader ) 
+		.dimension(dimension_byYearMonth)
+		.group( yearMonthAccessor );
+		
+	dc.redrawAll();
+}
+
+function showForecastsPerQuarter()
+{
+	grid_forecastsByPeriod
+		.htmlGroup( htmlForYearQuarterHeader ) 
+		.dimension(dimension_byYearQuarter)
+		.group( yearQuarterAccessor );
+		
+	dc.redrawAll();
+}
+
+function toggleEmptyWeeks()
+{
+	if (showingEmptyWeeks)
+	{
+		dimension_byID.filterFunction( function(d){ if (d == "none") return false; return true;});
+		dc.redrawAll();
+	}
+	else
+	{
+		dimension_byID.filterAll();
+		dc.redrawAll();
+	}
+	showingEmptyWeeks = !showingEmptyWeeks;
+}
+
+function toggleConstrainGridDisplay()
+{
+	var gridElement = document.getElementById("grid_forecastsByPeriod");
+	if (constrainingGridToWindowWidth)
+	{
+		if (gridElement)
+			gridElement.style.overflowX = "visible";
+	}
+	else
+	{
+		if (gridElement)
+			gridElement.style.overflowX = "scroll";
+	}
+	constrainingGridToWindowWidth = !constrainingGridToWindowWidth;
+}
+
+// Use this method to ensure that the "ignored" records are always included
+// in the current filters selected. This ensures the data grid shows the
+// empty weeks (they have a blank "ignored" record per column).
+function ensureIgnoreIsAlwaysSelectedAsAFilter(chart, filter)
+{
+	// console.log( chart.anchorName() + " --- " + chart.filters());
+	// if request is to show all (i.e. no filter), then do not interfere
+	if (!chart.hasFilter())
+		return;
+	
+	// get previously selected filters (if any)
+	var selectedExactFiltersArray = chart.filters();
+
+	// use the following function to go thru all records and filter. We make sure
+	// that the real (selected) filters are applied AND the ignore filter as well.
+	chart.dimension().filterFunction( 
+		function(d) 
+		{ 
+			if (d == ignore || selectedExactFiltersArray.indexOf(d) > -1) 
+				return true; 
+			return false;
+		} 
+	);
+}
+
+// Since the "ignored" records are always turned on (filtered), we need a
+// way to hide them in the chart controls. We do this by operating on the
+// original dimension's group (it must be passed in).
+// See https://github.com/dc-js/dc.js/wiki/FAQ#fake-groups for the basis.
+function removeIgnoreBin(sourceGroup)
+{
+	return {
+		all:function() {
+			return sourceGroup.all().filter(
+				function(d) { return d.key != ignore; }
+			);
+		}
+	}
+}
+
+// helper function
+function hfGenerateInterpolatedColorRange( interpolationFunction, min, max, steps)
+{
+	var colorRange = [];
+	var bar = min;
+	var rangeIndex = 0;
+	
+	while ( rangeIndex < steps )
+	{
+		colorRange[ rangeIndex++ ] = interpolationFunction( bar );
+		bar += ((max-min)/steps);
+	}
+	
+	return colorRange;
+}
+
+function constructCharts()
+{
+	crossfilter_forecasts = crossfilter(json_forecastSummaries);
+	
+	dimension_byID = crossfilter_forecasts.dimension( function(d) { return d["ID"];} );
+	dimension_byForecastCategory = crossfilter_forecasts.dimension( forecastCategoryAccessor );
+	dimension_byAssignee = crossfilter_forecasts.dimension( assigneeAccessor );
+	dimension_byStatus = crossfilter_forecasts.dimension( statusAccessor );
+	dimension_byYearMonthWeek = crossfilter_forecasts.dimension( yearMonthWeekAccessor );
+	dimension_byYearMonth = crossfilter_forecasts.dimension( yearMonthAccessor );
+	dimension_byYearQuarter = crossfilter_forecasts.dimension( yearQuarterAccessor );
+	dimension_byCompletionStatus = crossfilter_forecasts.dimension( completionStatusAccessor ); 
+
+	var function_commaFormat = d3.format(",");
+	var function_numberDataCommaFormat = function(d) {
+		return d.key + ': ' + function_commaFormat( d.value );
+	};
+
+	grid_forecastsByPeriod
+		.html( htmlForOneForecast )
+		// "javascript:grid_forecastsByPeriod.filterAll();dc.redrawAll();"
+		.htmlGroup( htmlForYearMonthWeekHeader ) 
+		.dimension(dimension_byYearMonthWeek)
+		.group( yearMonthWeekAccessor );
+
+	chart_forecastsByForecastCategory
+		.height(250).width(300)
+		.elasticX(true)
+		.elasticY(true)
+		//.x( d3.scale.ordinal().domain( getDomainWithoutIgnoreValues(dimension_byForecastCategory) ) )
+		.x( d3.scale.ordinal() )
+		.xUnits( dc.units.ordinal )
+		.dimension(dimension_byForecastCategory)
+		.group( removeIgnoreBin( dimension_byForecastCategory.group() ) )
+		.brushOn(false)
+		.controlsUseVisibility(true);
+
+	chart_forecastsByAssignee
+		.height(250).width(300)
+		.elasticX(true)
+		.elasticY(true)
+		// .x( d3.scale.ordinal().domain( getDomainWithoutIgnoreValues(dimension_byAssignee) ) )
+		.x( d3.scale.ordinal() )
+		.xUnits( dc.units.ordinal )
+		.dimension(dimension_byAssignee)
+		.group( removeIgnoreBin( dimension_byAssignee.group() ) )
+		.brushOn(false)
+		.controlsUseVisibility(true);
+
+	chart_forecastsByStatus
+		.height(250).width(300)
+		.elasticX(true)
+		.elasticY(true)
+		.x( d3.scale.ordinal() )
+		.xUnits( dc.units.ordinal )
+		.dimension(dimension_byStatus)
+		.group( removeIgnoreBin( dimension_byStatus.group() ) )
+		.brushOn(false)
+		.controlsUseVisibility(true);
+
+	chart_forecastsByCompletionStatus
+		.height(250).width(250)
+		.innerRadius(10)
+		.minAngleForLabel(0)
+		.dimension(dimension_byCompletionStatus)
+		.group( removeIgnoreBin( dimension_byCompletionStatus.group() ) )
+		// .ordinalColors(hfGenerateInterpolatedColorRange(d3.interpolateReds, 0.6, 1, 10))
+		.colors( d3.scale.ordinal().domain(["Delayed", "Postponed", "Done", "On Schedule"]).range(["#a6001a", "#e06000", "#004d33", "#00477e"]) )
+		.controlsUseVisibility(true);
+
+	chart_forecastsByForecastCategory.on('filtered', ensureIgnoreIsAlwaysSelectedAsAFilter);
+	chart_forecastsByAssignee.on('filtered', ensureIgnoreIsAlwaysSelectedAsAFilter);
+	chart_forecastsByStatus.on('filtered', ensureIgnoreIsAlwaysSelectedAsAFilter);
+	chart_forecastsByCompletionStatus.on('filtered', ensureIgnoreIsAlwaysSelectedAsAFilter);
+
+	chart_forecastsByAssignee.render();
+	chart_forecastsByForecastCategory.render();
+	chart_forecastsByStatus.render();
+	chart_forecastsByCompletionStatus.render();
+	
+	grid_forecastsByPeriod.render();
+
+	// don't show empty weeks by default
+	dimension_byID.filterFunction( function(d){ if (d == "none") return false; return true;});
+
+	dc.redrawAll(); 
+}
+
+constructCharts();
+</script>
+
+<script>
+// Specifically for handling in-report reviews
+var _fp_deliveryDateReviewedCFID;
+var _fp_issueKey;
+var _fp_projectKey;
+var _fp_dialog;
+var _fp_months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function _fp_requestReview(issueKey)
+{
+	if ( _fp_attemptNewReview(issueKey) )
+	{
+		if (_fp_deliveryDateReviewedCFID)
+		{
+			_fp_reviewDeliveryDate();    
+		}
+		else
+		{
+			${ajsJquery}.getJSON( "/rest/api/latest/field").always(_fp_fetchDeliveryDateReviewedCFID);
+		}
+	}
+}
+
+function _fp_attemptNewReview(issueKey)
+{
+	if (_fp_issueKey)
+	{
+		_fp_showDialog("Review Notification", "<p>Please wait: previous review request pending.</p>");
+		return false;
+	}
+
+	_fp_issueKey = issueKey;
+	return true;
+}
+
+function _fp_fetchDeliveryDateReviewedCFID(customFieldsJSON, responseStatus)
+{
+	try
+	{
+		if (responseStatus == "error")
+			throw Error("Response status error");
+
+		var cntr = 0;
+		for (cntr = 0; cntr < customFieldsJSON.length; cntr++)
+		{
+			if ( customFieldsJSON[cntr].name == "Delivery Date Reviewed" )
+			{
+				_fp_deliveryDateReviewedCFID = customFieldsJSON[cntr].id;
+				break;
+			}
+		}
+
+		if (_fp_deliveryDateReviewedCFID)
+			_fp_reviewDeliveryDate();
+		else
+			throw Error("Unable to fetch custom field ID for Delivery Date Reviewed.")
+	}
+	catch (err)
+	{
+		_fp_issueKey = null;
+		_fp_showDialog("Review Notification", "<p>An unexpected error occurred. Please try again later.</p>");
+	}
+}
+
+function _fp_reviewDeliveryDate()
+{
+	try
+	{
+		// determine the project
+		_fp_projectKey = _fp_issueKey.substring( 0, _fp_issueKey.indexOf('-') );
+		// fetch the ID of the forecast reviewer's role
+		${ajsJquery}.getJSON( "/rest/api/latest/project/" + _fp_projectKey + "/role").always( _fp_fetchForecastReviewersRoleID );
+	}
+	catch (err)
+	{
+		_fp_issueKey = null;
+		_fp_showDialog("Review Notification", "<p>An unexpected error occurred. Please try again later.</p>");
+	}
+}
+
+function _fp_fetchForecastReviewersRoleID(projectRolesJSON, responseStatus)
+{
+	try
+	{
+		if (responseStatus == "error")
+			throw Error("Response status error");
+
+		var forecastReviewersID = projectRolesJSON["Forecast Reviewers"].substring(projectRolesJSON["Forecast Reviewers"].lastIndexOf('/')+1);
+
+		// Get the reviewers for the project in question
+		${ajsJquery}.getJSON( "/rest/api/latest/project/" + _fp_projectKey + "/role/" + forecastReviewersID).always(_fp_fetchForecastReviewers);
+	}
+	catch (err)
+	{
+		_fp_issueKey = null;
+		_fp_showDialog("Review Notification", "<p>An unexpected error occurred. Please try again later.</p>");
+	}
+}
+
+function _fp_fetchForecastReviewers(forecastReviewersJSON, responseStatus)
+{
+	try
+	{
+		if (responseStatus == "error")
+			throw Error("Response status error");
+
+		var reviewers = forecastReviewersJSON["actors"];
+		var reviewer = null;
+		var reviewerDisplayNames = [];
+		var authorizedReviewer = false;
+		
+		if (reviewers && reviewers.length > 0)
+		{
+			var cntr = 0;
+			for (cntr = 0; cntr < reviewers.length; cntr++)
+			{
+				if (AJS.params["loggedInUser"] == reviewers[cntr]["name"])
+				{
+					authorizedReviewer = true;
+					break;
+				}
+				reviewerDisplayNames.push( (cntr+1) + ". " + reviewers[cntr]["displayName"] + "\n");
+			}
+			
+			if ( authorizedReviewer )
+			{
+				// proceed with the review since he is authorized
+				${ajsJquery}.ajax({
+					type : "PUT",
+					contentType : "application/json",
+					url : "/rest/api/2/issue/" + _fp_issueKey,
+					data : '{ "fields" : {"' + _fp_deliveryDateReviewedCFID + '" : [] } }'
+				})
+				.done( function(msg) 
+				{
+					${ajsJquery}.ajax({
+						type : "PUT",
+						contentType : "application/json",
+						url : "/rest/api/2/issue/" + _fp_issueKey,
+						data : '{ "fields" : {"' + _fp_deliveryDateReviewedCFID + '" : [{"value" : "Yes"}]} }'
+					})
+					.done( function(msg2) 
+					{
+						var allForecasts = crossfilter_forecasts.all();
+						var j = 0;
+						var forecastToUpdate = null;
+						for (j=0; j<allForecasts.length; j++)
+						{
+							if (allForecasts[j].ID == _fp_issueKey)
+							{
+								forecastToUpdate = allForecasts[j];
+								break; 
+							}
+						}
+						
+						var domElement = document.getElementById("fccdtb" + _fp_issueKey); // the card tab
+						if ( domElement.innerText == "POSTPONED")
+						{
+							forecastToUpdate["Completion Status"] = "On Schedule";
+							domElement.innerText = "ON SCHEDULE";
+							domElement.style.width = "11em";
+	
+							domElement = document.getElementById(_fp_issueKey); // the card
+							domElement.classList.remove("w3-highway-orange", "w3-border-red", "w3-hover-pale-yellow");
+							domElement.classList.add("w3-highway-blue", "w3-border-blue", "w3-hover-pale-blue");
+						}
+
+						forecastToUpdate["Last Reviewed Delivery Date"] = forecastToUpdate["Current Delivery Date"];
+						document.getElementById("lstrvdtu" + _fp_issueKey).innerHTML = document.getElementById("propdtu" + _fp_issueKey).innerHTML;
+	 					
+						// domElement.innerHTML = _fp_months[today.getMonth()] + " " + today.getDate() + ", " + today.getFullYear();
+						
+						_fp_issueKey = null;
+					});
+				});
+			}
+			else
+			{
+				_fp_showDialog("Review Notification", "<p>Unauthorized: you are not listed as one of the following authorized reviewers: \n" + reviewerDisplayNames + "</p>");
+			_fp_issueKey = null;
+			}
+		}
+		else
+		{
+			_fp_showDialog("Review Notification", "<p>There are no authorized reviewers configured for this issue. Please fix the configuration of the issue's project to include reviewers.</p>");
+			_fp_issueKey = null;
+		}
+	}
+	catch (err)
+	{
+		_fp_showDialog("Review Notification", "<p>An unexpected error occurred. Please try again later.</p>");
+		_fp_issueKey = null;
+	}
+	finally
+	{
+	}
+}
+
+function _fp_prepareDialog()
+{
+	if (_fp_dialog)
+		return;
+	_fp_dialog = new AJS.Dialog({
+		width : 500, height : 300, id : "_fp_dialog",
+		closeOnOutsideClick : true
+	});
+	_fp_dialog.addHeader("Review Notification");
+	_fp_dialog.addPanel("Panel 1", "<p>Message 1</p>", "panel-body");
+	_fp_dialog.addButton("Close", function(dialog) { dialog.hide(); });
+	_fp_dialog.gotoPage(0);
+	_fp_dialog.gotoPanel(0);
+}
+
+function _fp_showDialog(textHeader, htmlMessage)
+{
+	_fp_prepareDialog();
+	_fp_dialog.addHeader(textHeader);
+	_fp_dialog.getPanel(0).html(htmlMessage);
+	_fp_dialog.show();
+}
+
+function _fp_showExplainDoneDialog()
+{
+	_fp_showDialog(
+		'Help on "Done?"',
+		"<div class='explainDoneDialog'>"
+		+ "<p><strong>Done:</strong> the forecast has been delivered.</p>"
+		+ "<p><strong>On Schedule:</strong> the forecast is not done but it is on schedule.</p>"
+		+ "<p><strong>Delayed:</strong> the forecast is not done, and its delivery date has already passed.</p>"
+		+ "<p><strong>Postponed:</strong> the forecast is not done, and a new delivery date has been proposed but not accepted.</p>"
+		+ "</div>"
+	);
+}
+
+</script>
+
+## END ##########################################
+
+

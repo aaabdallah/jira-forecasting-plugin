@@ -1,0 +1,388 @@
+$webResourceManager.requireResourcesForContext("sa.com.ruhtlc.cloud.jira.forecasting")
+
+## avoids the Velocity escaping junk.
+#set( $ajsJquery = "AJS.$" )
+
+<table class="reportHeader w3-light-grey">
+<tbody>
+	<tr>
+		<td>Report Period: $MMMddyyyyFormatter.format($reportStartingFiscalWeek.getStartingDate()) - $MMMddyyyyFormatter.format($reportEndingFiscalWeek.getEndingDate())</td>
+		<td>Forecasts Source: <a href="$forecastsSourceURL" target="_blank">$forecastsSourceName</a></td>
+	</tr>
+	<tr>
+		<td>Forecast Date Used: $forecastDateToUse</td>
+		<td>Included Forecasts: $validForecastsCount</td>
+	</tr>
+</tbody>
+</table>
+
+#if ( ! $validForecastsCount || $validForecastsCount == 0 )
+<div class="aui-message aui-message-info">
+	<p class="title">
+		<strong>No matching forecasts</strong>
+	</p>
+	<p>No forecasts were found that match the report's input parameters.</p>
+
+	#stop
+	
+#end
+
+## BEGIN ########################################
+
+<br/>
+
+<div class="count_sales">
+	<h2>Currently showing <span class="filter-count highlightRY"></span> forecasts 
+	(out of <span class="total-count highlightRY"></span>) 
+	with a total value of <span id="numberdisplay_filteredSalesTotal" class="highlightRY"></span>. 
+		<button class="w3-btn w3-black w3-round-large w3-tiny dashboardButton" style="margin-left:1em" onclick="javascript:dc.filterAll(); dc.redrawAll();">RESET ALL</button>
+	</h2>
+</div>
+<div id="dashboardAndTableContainer" style="clear:both">
+
+	<div id="dashboardRow1" class="dashboardRow w3-light-grey">
+	
+		<div id="leftSideControls" style="padding: 1em">
+			<div id="chart_salesByFQ" class="dcchart">
+				<strong>By Fiscal Quarter</strong>
+				<div class="reset" style="visibility: hidden;">
+					<button class="w3-btn w3-black w3-round-large w3-tiny dashboardButton" onclick="javascript:chart_salesByFQ.filterAll();dc.redrawAll();">RESET</button>
+					<span class="selectedfilters filter"></span>
+				</div>
+			</div>
+			<div id="chart_salesByStatus" class="dcchart" style="clear:both">
+				<strong>By Status</strong>
+				<div class="reset" style="visibility: hidden;">
+					<button class="w3-btn w3-black w3-round-large w3-tiny dashboardButton" onclick="javascript:chart_salesByStatus.filterAll();dc.redrawAll();">RESET</button>
+					<span class="selectedfilters filter"></span>
+				</div>
+			</div>
+		</div>
+	
+		<div id="mainPanelControls" style="padding: 1em">
+			<div id="chart_salesByFMY" class="dcchart">
+				<strong>By Fiscal Month</strong>
+				<div class="reset" style="visibility: hidden; display: flex;align-items: center;justify-content: center;">
+					<button class="w3-btn w3-black w3-round-large w3-tiny dashboardButton" onclick="javascript:chart_salesByFMY.filterAll();dc.redrawAll();">RESET</button>
+					<span class="selectedfilters filter"></span>
+				</div>
+			</div>
+		</div>
+	
+		<div id="rightSideControls" style="padding: 1em">
+			<div id="chart_salesByAssignee" class="dcchart">
+				<strong>By Assignee</strong>
+				<div class="reset" style="visibility: hidden;">
+					<button class="w3-btn w3-black w3-round-large w3-tiny dashboardButton" onclick="javascript:chart_salesByAssignee.filterAll();dc.redrawAll();">RESET</button>
+					<span class="selectedfilters filter"></span>
+				</div>
+			</div>
+		</div>
+		
+	</div> <!-- dashboard row 1 -->
+	
+	<h2 style="clear:both">
+		Listing of currently displayed forecasts 
+		<button id="downloadTableData" class="w3-btn w3-black w3-round-large w3-tiny dashboardButton">Download Current Data</button>
+	</h2>
+	<table id="table_sales" class="table_sales aui">
+	</table>
+
+</div> <!-- dashboardAndTableContainer -->
+
+<script>
+var json_forecastSummaries = $jsonForecastSummariesWithHtml;
+var extraFieldFilterNames = $extraFieldFilterNamesWithHtml;
+
+var crossfilter_sales;
+
+var numberdisplay_filteredSalesTotal = dc.numberDisplay("#numberdisplay_filteredSalesTotal");
+var chart_salesByFQ = dc.pieChart("#chart_salesByFQ");
+var chart_salesByStatus = dc.pieChart("#chart_salesByStatus");
+var chart_salesByFMY = dc.barChart("#chart_salesByFMY");
+var chart_salesByAssignee = dc.rowChart("#chart_salesByAssignee");
+var chart_salesByExtraField;
+var count_sales = dc.dataCount(".count_sales");
+var table_sales = dc.dataTable(".table_sales");
+
+var dimension_byID;
+var dimension_byFQ;
+var dimension_byStatus;
+var dimension_byFMY;
+var dimension_byAssignee;
+var dimension_byExtraField;
+
+// helper function
+function hfCreateDOMElement(name, attributes, text)
+{
+	var element = document.createElement(name);
+	if (attributes)
+	{
+		for (var attribute in attributes)
+		{
+			element.setAttribute( attribute, attributes[ attribute ] );
+		}
+	}
+	if (text)
+		element.textContent = text;
+	return element;
+}
+
+// helper function
+function hfInsertAfter(newElementToInsert, existingElementToInsertAfter)
+{
+	existingElementToInsertAfter.parentNode.insertBefore(newElementToInsert, existingElementToInsertAfter.nextSibling);
+	return newElementToInsert;
+}
+
+// helper function
+function hfGenerateInterpolatedColorRange( interpolationFunction, min, max, steps)
+{
+	var colorRange = [];
+	var bar = min;
+	var rangeIndex = 0;
+	
+	while ( rangeIndex < steps )
+	{
+		colorRange[ rangeIndex++ ] = interpolationFunction( bar );
+		bar += ((max-min)/steps);
+	}
+	
+	return colorRange;
+}
+
+// http://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+function componentToHex(c) {
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+}
+
+function rgbToHex(r, g, b) {
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+
+function hfGenerateColorRange(startColor, endColor, steps)
+{
+  var linearScale = d3.scale.linear().domain([0,steps]).range([startColor, endColor]).interpolate(d3.interpolateLab);
+  var colorRange = [];
+  var i = 0;
+                                           
+  for (i=0; i<steps; i++)
+    {
+      colorRange[ i ] = linearScale(i);
+    }
+
+  return colorRange;
+}
+
+// helper function (closure)
+function columnAccessor(columnName)
+{
+	var savedColumnName = columnName;
+	
+	var accessor = function(d) { return d[ columnName ]; };
+	return accessor;
+}
+
+function constructCharts()
+{
+	var efCntr = 0;
+
+	crossfilter_sales = crossfilter(json_forecastSummaries);
+	
+	dimension_byID = crossfilter_sales.dimension( function(d) { return d["ID"];} );
+	dimension_byFQ = crossfilter_sales.dimension( function(d) { return "Q" + d["Fiscal Quarter"];} );
+	dimension_byStatus = crossfilter_sales.dimension( function(d) { return d["Status"];} );
+	dimension_byFMY = crossfilter_sales.dimension( function(d) { return d["Fiscal Month of Year"];} );
+	dimension_byAssignee = crossfilter_sales.dimension( function(d) { return d["Assignee"];} );
+		
+	var function_commaFormat = d3.format(",");
+	var function_numberDataCommaFormat = function(d) {
+		return d.key + ': ' + function_commaFormat( d.value );
+	};
+	var function_getTotalValue = function(d) {return d["Total Value"];};
+	var group_filteredSalesTotal = crossfilter_sales.groupAll().reduceSum(  function(d) {return d["Total Value"];} );
+
+	numberdisplay_filteredSalesTotal
+		.valueAccessor( function(d) { return group_filteredSalesTotal.value(); } )
+		.group(group_filteredSalesTotal)
+		.formatNumber( d3.format(',d') );
+	chart_salesByFQ
+		.width(150).height(150)
+		.ordinalColors(hfGenerateColorRange("#006000", "#00C000", 4))
+		// .ordinalColors(["#fdf5e6","#ffeb3b","#ffc107","#ff5722"]) // w3- sand, yellow, amber, deep-orange
+		.innerRadius(10)
+		.minAngleForLabel(0)
+		.title( function_numberDataCommaFormat )
+		// .legend(dc.legend().x(80).y(70).itemHeight(13).gap(5))
+		.dimension(dimension_byFQ)
+		.group(dimension_byFQ.group().reduceSum( function(d) {return d["Total Value"];} ) )
+		.controlsUseVisibility(true);
+	chart_salesByStatus
+		.width(150).height(150)
+		.ordinalColors(hfGenerateColorRange("#900000", "#F00000", 10))
+		//.ordinalColors(hfGenerateInterpolatedColorRange(d3.interpolateReds, 0.6, 1, 10))
+		//.colors( d3.scale.category10() )
+		.innerRadius(10)
+		.minAngleForLabel(0)
+		.title( function_numberDataCommaFormat )
+		.dimension(dimension_byStatus)
+		.group(dimension_byStatus.group().reduceSum( function(d) {return d["Total Value"];} ) )
+		.controlsUseVisibility(true);
+	chart_salesByFMY
+		.width(500).height(300)
+		.margins({top: 10, right: 30, bottom: 30, left: 100})
+		.x( d3.scale.ordinal().domain( [1,2,3,4,5,6,7,8,9,10,11,12] ) )
+		.xUnits( dc.units.ordinal )
+		.title( function_numberDataCommaFormat )
+		.dimension(dimension_byFMY)
+		.group(dimension_byFMY.group().reduceSum( function(d) {return d["Total Value"];} ) )
+		.elasticX(false) // need to set this with a linear scale otherwise the unused values on the ends will be removed
+		.elasticY(true)
+		.brushOn(false)
+		.controlsUseVisibility(true);
+	chart_salesByAssignee
+		.width(400).height(300)
+		.x( d3.scale.ordinal() )
+		.title( function_numberDataCommaFormat )
+		.label( function_numberDataCommaFormat )
+		.dimension(dimension_byAssignee)
+		.group(dimension_byAssignee.group().reduceSum( function(d) {return d["Total Value"];} ) )
+		.elasticX(true)
+		.ordering( function(d) {return -d.value;} )
+		.cap(10)
+		.controlsUseVisibility(true);
+	chart_salesByAssignee.xAxis().ticks(4); // otherwise the labels overlap too much for large values
+	
+	count_sales
+		.dimension( crossfilter_sales )
+		.group( crossfilter_sales.groupAll() );
+	
+	var tsc = [];
+	tsc[tsc.length] = {label:"#&#8597", format: function(d) {return "<a href='/browse/" + d["ID"] + "' target='_blank' title='Edit...'>" + d["ID"] + "</a>";}, tscIndex:"ID"};
+	tsc[tsc.length] = {label:"Assignee&#8597", format: function(d) {return d["Assignee"];}, tscIndex:"Assignee"};
+	tsc[tsc.length] = {label:"Status&#8597", format: function(d) {return d["Status"];}, tscIndex:"Status"};
+	tsc[tsc.length] = {label:"Y&#8597", format: function(d) {return d["Fiscal Year"];}, tscIndex:"Fiscal Year"};
+	tsc[tsc.length] = {label:"Q&#8597", format: function(d) {return d["Fiscal Quarter"];}, tscIndex:"Fiscal Quarter"};
+	tsc[tsc.length] = {label:"M&#8597", format: function(d) {return d["Fiscal Month of Year"];}, tscIndex:"Fiscal Month of Year"};
+	tsc[tsc.length] = {label:"W&#8597", format: function(d) {return d["Fiscal Week of Month"];}, tscIndex:"Fiscal Week of Month"};
+	tsc[tsc.length] = {label:"Total Value&#8597", format: function(d) {return function_commaFormat(d["Total Value"]);}, tscIndex:"Total Value"}; 
+	tsc[tsc.length] = {label:"Summary&#8597", format: function(d) {return d["Summary"];}, tscIndex:"Summary"};
+
+	// the columns will be set later after processing the extra fields (if any)
+	table_sales
+		.dimension(dimension_byID)
+		.group( function(d) { return "Records"; })
+		.showGroups(false)
+		.size(Infinity)
+		.sortBy( function(d) { return d["Assignee"] + d["ID"]; });
+
+	// BEGIN: Add charts for extra field filters (if any))
+	chart_salesByExtraField = [];
+	dimension_byExtraField = [];
+	var dom_div_InsertionPoint = document.getElementById("dashboardRow1");
+	// We need a set of functions for generating sequential colors in row charts
+	var colorInterpolationFunctions = [d3.interpolateBlues, d3.interpolateGreens, d3.interpolateOranges, d3.interpolatePurples, d3.interpolateReds];
+	var capOnRows = 10;
+
+	// blue, green, orange, purple, red
+	var startColors = ["#0080F0","#008000","#FF6000","#8080FF","#C00000"];
+	var endColors = ["#00F0F0","#00F000","#FFC000","FF80FF","#FF0000"];
+
+	for (efCntr=0; efCntr<extraFieldFilterNames.length; efCntr++)
+	{
+		dimension_byExtraField[efCntr] = 
+			crossfilter_sales.dimension( function(d) {return d[ extraFieldFilterNames[efCntr] ];}  );
+
+		// construct the reset filter button div
+		var dom_div_extraFieldChartReset = hfCreateDOMElement(
+			"div", {"class":"reset",
+				"style":"visibility: hidden; display: flex;align-items: center;justify-content: center;" }, null);
+		dom_div_extraFieldChartReset.appendChild(
+			hfCreateDOMElement("button", {"class":"w3-btn w3-black w3-round-large w3-tiny dashboardButton",
+				"onclick":"javascript:chart_salesByExtraField[" + efCntr + "].filterAll();dc.redrawAll();" }, "RESET")
+		);
+		dom_div_extraFieldChartReset.appendChild(
+			hfCreateDOMElement("span", {"class":"selectedfilters filter"}, null)
+		);
+
+		// Construct the chart div with title and reset sub-div
+		var dom_div_extraFieldChart = hfCreateDOMElement(
+			"div", {"id":"chart_salesByExtraField" + efCntr, "class":"dcchart extraFieldChart"}, null);
+		dom_div_extraFieldChart.appendChild( hfCreateDOMElement( "strong", null, "By " + extraFieldFilterNames[efCntr] ) );
+		dom_div_extraFieldChart.appendChild( dom_div_extraFieldChartReset );
+		
+		// Construct the chart's div container
+		var dom_div_extraFieldChartContainer = hfCreateDOMElement("div", {"class":"extraFieldChartContainer"}, null);
+		dom_div_extraFieldChartContainer.appendChild( dom_div_extraFieldChart );
+		
+		// Insert the new chart container div
+		dom_div_InsertionPoint = hfInsertAfter(dom_div_extraFieldChartContainer, dom_div_InsertionPoint);
+
+		// Use dc.js to create the chart div contents
+		chart_salesByExtraField[efCntr] = dc.rowChart("#chart_salesByExtraField" + efCntr);
+
+		chart_salesByExtraField[efCntr]
+			.width(300).height( dimension_byExtraField[efCntr].group().size() * 20 )
+			.margins({top: 0, right: 30, bottom: 30, left: 10})
+			.ordinalColors(hfGenerateColorRange(startColors[efCntr%(startColors.length)], endColors[efCntr%(endColors.length)], capOnRows+1))
+			//.ordinalColors( hfGenerateInterpolatedColorRange( colorInterpolationFunctions[efCntr%(colorInterpolationFunctions.length)], 0.4, 0.1, capOnRows+1 ) )
+			.x( d3.scale.ordinal() )
+			.elasticX(true)
+			.title( function_numberDataCommaFormat )
+			.label( function_numberDataCommaFormat )
+			.dimension(dimension_byExtraField[efCntr])
+			.group(dimension_byExtraField[efCntr].group().reduceSum( function(d) {return d["Total Value"];} ) )
+			.ordering( function(d) {return -d.value;} )
+			//.cap( capOnRows )
+			.controlsUseVisibility(true);
+		chart_salesByExtraField[efCntr].xAxis().ticks(3);
+
+		// Add the extra field to the columns displayed in data table
+		// tsc[tsc.length] = {label:extraFieldFilterNames[efCntr], format: function(d) {console.log(d); return d[ extraFieldFilterNames[efCntr] ];}};
+		tsc[tsc.length] = {label:extraFieldFilterNames[efCntr] + "&#8597", format: columnAccessor(extraFieldFilterNames[efCntr]), tscIndex:extraFieldFilterNames[efCntr]};  
+
+		chart_salesByExtraField[efCntr].render();
+	}
+	
+	table_sales
+		.columns(tsc);
+	// END: Add charts for extra field filters (if any))
+	
+	chart_salesByFQ.render();
+	chart_salesByStatus.render();
+	chart_salesByFMY.render();
+	chart_salesByAssignee.render();
+
+	dc.redrawAll(); // without this, the count_sales dataCount does not initialize properly
+	
+	// enable sortable columns
+	d3.selectAll("#table_sales th").on("click", function(d) { // d will hold the tscIndex entry for that header
+		table_sales.sortBy( columnAccessor( d.tscIndex ) );
+		if ( table_sales.order() == d3.ascending )
+			table_sales.order( d3.descending );
+		else
+			table_sales.order( d3.ascending );
+		table_sales.redraw();
+	});
+
+	// enable download of data
+	d3.select('#downloadTableData').on('click', function() {
+		var data = dimension_byID.top(Infinity);
+		var blob = new Blob([d3.csv.format(data)], {type: "text/csv;charset=utf-8"});
+		saveAs(blob, 'data.csv');
+    });
+}
+
+$ajsJquery( window ).load(
+	function()
+	{
+		constructCharts();
+	}
+); 
+
+</script>
+
+## END ##########################################
+
+

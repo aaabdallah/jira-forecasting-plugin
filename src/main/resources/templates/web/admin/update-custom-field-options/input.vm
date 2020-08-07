@@ -1,0 +1,89 @@
+<header class="aui-page-header aui-page-header-fixed header-with-border">
+	<div class="aui-page-header-inner">
+		<div class="aui-page-header-main">
+			<h1>Update Custom Field Options Plugin</h1>
+		</div>
+	</div>
+</header>
+
+<div class="aui-page-panel">
+	<div class="aui-page-panel-inner">
+		<section class="aui-page-panel-content">
+
+#if (${action.hasErrorMessages})
+			<div class="aui-message aui-message-error">
+	#foreach ($errorMsg in ${action.flushedErrorMessages})
+				<p>$errorMsg</p>
+	#end
+			</div>
+#end
+
+#if ( ${action.getSuccessMessage()} )
+			<div class="aui-message aui-message-success">
+				<p>${action.getSuccessMessage()}</p>
+			</div>
+#end
+
+			<p><i>IMPORTANT: please be aware that changing or deleting options that are currently used in existing issues
+			will cause the value of the custom field in that issue to be reset to <b>nothing</b>. For this reason, be
+			very careful, and <u>consider the effect on existing issues</u> when changing options using this page.</i></p>
+
+			<a href="/secure/admin/ViewIssueTypes.jspa" class="aui-button aui-button-link" style="float:right; margin-right:10px">Back to Administration &#8658; Issues</a>
+
+			<form action="#" method="post" class="aui">
+
+			<table id="forecast-categories" border="0" cellpadding="0" cellspacing="0" class="aui">
+				<tbody>
+
+					<tr>
+						<td>Custom Field Name</td>
+						<td>
+							<input type="text" id="customFieldName" name="customFieldName" class="text" value="$!customFieldName"/>
+#if ( $errors && $errors.get("customFieldName") )
+							<div class="error">$errors.get("customFieldName")</div>
+#end
+						</td>
+					</tr>
+					<tr>
+						<td>Field Configuration Scheme Context Name</td>
+						<td>
+							<input type="text" id="fieldConfigurationSchemeContextName" name="fieldConfigurationSchemeContextName" class="text" value="$!fieldConfigurationSchemeContextName"/>
+#if ( $errors && $errors.get("fieldConfigurationSchemeContextName") )
+							<div class="error">$errors.get("fieldConfigurationSchemeContextName")</div>
+#end
+						</td>
+					</tr>
+					<tr>
+						<td>Options</td>
+						<td>
+							<textarea id="optionsAsString" name="optionsAsString" class="textarea" rows="10" style="min-width:350px">$!optionsAsString</textarea>
+#if ( $errors && $errors.get("optionsAsString") )
+							<div class="error">$errors.get("optionsAsString")</div>
+#end
+						</td>
+					</tr>
+					<tr>
+						<td>Default Option</td>
+						<td>
+							<input type="text" id="defaultOption" name="defaultOption" class="text" value="$!defaultOption"/>
+#if ( $errors && $errors.get("defaultOption") )
+							<div class="error">$errors.get("defaultOption")</div>
+#end
+						</td>
+					</tr>
+
+				</tbody>
+			</table>
+
+			<div class="buttons-container">
+				<div class="buttons">
+					<input class="button submit" type="submit" name="formSubmitted" value="Load" id="update-custom-field-options-load-button"/>
+					<input class="button submit" type="submit" name="formSubmitted" value="Save" id="update-custom-field-options-save-button"/>
+				</div>
+			</div>
+
+			</form>
+
+		</section><!-- .aui-page-panel-content -->
+	</div><!-- .aui-page-panel-inner -->
+</div>
